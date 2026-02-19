@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340">
+  <rect width="600" height="340" fill="#1a1a2e"/>
+  <rect x="40" y="40" width="520" height="260" rx="8" fill="#16213e" stroke="#0f3460" stroke-width="2"/>
+  <line x1="40" y1="120" x2="560" y2="120" stroke="#0f3460" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="40" y1="200" x2="560" y2="200" stroke="#0f3460" stroke-width="1" stroke-dasharray="4,4"/>
+  <rect x="60" y="50" width="480" height="55" rx="6" fill="#d5ff45" opacity="0.15" stroke="#d5ff45" stroke-width="1.5"/>
+  <text x="300" y="84" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#d5ff45" text-anchor="middle">PRIME SIDEWALK — ENTRY ZONE</text>
+  <rect x="60" y="130" width="230" height="55" rx="6" fill="#00d29a" opacity="0.12" stroke="#00d29a" stroke-width="1.5"/>
+  <text x="175" y="164" font-family="Arial,sans-serif" font-size="11" font-weight="600" fill="#00d29a" text-anchor="middle">PARCEL LEFT</text>
+  <rect x="310" y="130" width="230" height="55" rx="6" fill="#00d29a" opacity="0.12" stroke="#00d29a" stroke-width="1.5"/>
+  <text x="425" y="164" font-family="Arial,sans-serif" font-size="11" font-weight="600" fill="#00d29a" text-anchor="middle">PARCEL RIGHT</text>
+  <rect x="140" y="215" width="320" height="70" rx="8" fill="#df3257" opacity="0.1" stroke="#df3257" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="300" y="255" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="#df3257" text-anchor="middle">COMING SOON</text>
+  <text x="300" y="24" font-family="Arial,sans-serif" font-size="11" fill="#555" text-anchor="middle">SIDEWALK VIEW — STOREFRONT ENTRY</text>
+</svg>

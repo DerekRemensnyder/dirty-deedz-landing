@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340">
+  <rect width="600" height="340" fill="#1a1a2e"/>
+  <rect x="40" y="40" width="520" height="260" rx="8" fill="#16213e" stroke="#0f3460" stroke-width="2"/>
+  <line x1="40" y1="100" x2="560" y2="100" stroke="#0f3460" stroke-width="1" stroke-dasharray="8,6"/>
+  <line x1="40" y1="170" x2="560" y2="170" stroke="#0f3460" stroke-width="1" stroke-dasharray="8,6"/>
+  <line x1="40" y1="240" x2="560" y2="240" stroke="#0f3460" stroke-width="1" stroke-dasharray="8,6"/>
+  <line x1="200" y1="40" x2="200" y2="300" stroke="#0f3460" stroke-width="1" stroke-dasharray="8,6"/>
+  <line x1="400" y1="40" x2="400" y2="300" stroke="#0f3460" stroke-width="1" stroke-dasharray="8,6"/>
+  <rect x="220" y="110" width="160" height="50" rx="6" fill="#d5ff45" opacity="0.15" stroke="#d5ff45" stroke-width="1.5"/>
+  <text x="300" y="142" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#d5ff45" text-anchor="middle">AD PARCEL A</text>
+  <rect x="60" y="180" width="120" height="50" rx="6" fill="#00d29a" opacity="0.12" stroke="#00d29a" stroke-width="1.5"/>
+  <text x="120" y="212" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="#00d29a" text-anchor="middle">PARCEL B</text>
+  <rect x="420" y="180" width="120" height="50" rx="6" fill="#df3257" opacity="0.12" stroke="#df3257" stroke-width="1.5"/>
+  <text x="480" y="212" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="#df3257" text-anchor="middle">BOOKED</text>
+  <text x="300" y="24" font-family="Arial,sans-serif" font-size="11" fill="#555" text-anchor="middle">SIDEWALK VIEW — BROADWAY &amp; 34TH</text>
+</svg>
