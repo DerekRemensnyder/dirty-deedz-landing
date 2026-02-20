@@ -40,8 +40,6 @@ interface MapSidebarProps {
   filteredPins: MapPin[];
   filters: MapFilters;
   onFiltersChange: (f: MapFilters) => void;
-  selectedPin: MapPin | null;
-  onSelectPin: (pin: MapPin) => void;
   open: boolean;
   onToggle: () => void;
   onListDeedz: () => void;
@@ -52,8 +50,6 @@ export default function MapSidebar({
   filteredPins,
   filters,
   onFiltersChange,
-  selectedPin,
-  onSelectPin,
   open,
   onToggle,
   onListDeedz,
@@ -68,6 +64,19 @@ export default function MapSidebar({
     s._multi = multi;
     return s;
   }, [pins]);
+
+  const stateCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    pins.forEach((p) => { c[p.state] = (c[p.state] || 0) + 1; });
+    return c;
+  }, [pins]);
+
+  const cityCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    const subset = filters.state ? pins.filter((p) => p.state === filters.state) : pins;
+    subset.forEach((p) => { c[p.city] = (c[p.city] || 0) + 1; });
+    return c;
+  }, [pins, filters.state]);
 
   const citiesForState = useMemo(() => {
     if (!filters.state) return ALL_CITIES;
@@ -118,7 +127,6 @@ export default function MapSidebar({
       <aside className={`map-sidebar${open ? " open" : ""}`}>
         <div className="sidebar-header">
           <h2>Browse Deedz</h2>
-          <span className="sidebar-count">{filteredPins.length} locations</span>
         </div>
 
         {/* Action buttons */}
@@ -163,7 +171,7 @@ export default function MapSidebar({
               <option value="">All States</option>
               {ALL_STATES.map((s) => (
                 <option key={s} value={s}>
-                  {s}
+                  {s} ({stateCounts[s] || 0})
                 </option>
               ))}
             </select>
@@ -181,7 +189,7 @@ export default function MapSidebar({
               <option value="">All Cities</option>
               {citiesForState.map((c) => (
                 <option key={c} value={c}>
-                  {c}
+                  {c} ({cityCounts[c] || 0})
                 </option>
               ))}
             </select>
@@ -192,6 +200,15 @@ export default function MapSidebar({
         <div className="filter-group">
           <label>Status</label>
           <div className="filter-chips">
+            {/* View All */}
+            <button
+              className={`chip${filters.status.length === 0 && !filters.multiDeedz ? " active" : ""}`}
+              onClick={() =>
+                onFiltersChange({ ...filters, status: [], multiDeedz: false })
+              }
+            >
+              View All ({pins.length})
+            </button>
             {/* Available */}
             <button
               className={`chip${filters.status.includes("available") ? " active" : ""}`}
@@ -298,39 +315,7 @@ export default function MapSidebar({
           </button>
         )}
 
-        {/* Pin list */}
-        <div className="pin-list">
-          {filteredPins.map((pin) => (
-            <button
-              key={pin.id}
-              className={`pin-card${selectedPin?.id === pin.id ? " active" : ""}`}
-              onClick={() => onSelectPin(pin)}
-            >
-              <div className="pin-card-top">
-                <span
-                  className="pin-card-dot"
-                  style={{ background: STATUS_COLORS[pin.status] }}
-                />
-                <span className="pin-card-name">{pin.name}</span>
-                {pin.parcels > 1 && (
-                  <span className="pin-card-parcels">
-                    {pin.parcels} deedz
-                  </span>
-                )}
-              </div>
-              <div className="pin-card-bottom">
-                <span>{pin.neighborhood}</span>
-                <span>{TRAFFIC_LABELS[pin.traffic]}</span>
-                <span>{pin.sqft} sqft</span>
-              </div>
-            </button>
-          ))}
-          {filteredPins.length === 0 && (
-            <p className="pin-list-empty">
-              No locations match your filters. Try adjusting above.
-            </p>
-          )}
-        </div>
+
       </aside>
     </>
   );

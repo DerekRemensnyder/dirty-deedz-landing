@@ -19,6 +19,7 @@ function MapPageInner() {
   const [bookingPin, setBookingPin] = useState<MapPin | null>(null);
   const [listingOpen, setListingOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [cardView, setCardView] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("list") === "true") {
@@ -61,10 +62,6 @@ function MapPageInner() {
           filteredPins={filteredPins}
           filters={filters}
           onFiltersChange={setFilters}
-          selectedPin={selectedPin}
-          onSelectPin={(pin) => {
-            setSelectedPin(pin);
-          }}
           open={sidebarOpen}
           onToggle={() => setSidebarOpen((p) => !p)}
           onListDeedz={() => setListingOpen(true)}
@@ -74,6 +71,8 @@ function MapPageInner() {
           selectedPin={selectedPin}
           onSelectPin={handleSelectPin}
           onBookPin={handleBookPin}
+          cardView={cardView}
+          onToggleCardView={() => setCardView(v => !v)}
         />
       </div>
       <BookingPanel pin={bookingPin} onClose={() => setBookingPin(null)} />

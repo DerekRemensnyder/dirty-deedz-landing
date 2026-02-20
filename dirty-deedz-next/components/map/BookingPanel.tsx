@@ -16,11 +16,8 @@ interface BookingPanelProps {
 export default function BookingPanel({ pin, onClose }: BookingPanelProps) {
   const [selectedTerm, setSelectedTerm] = useState(0);
   const [currentImg, setCurrentImg] = useState(0);
-  const [designOption, setDesignOption] = useState<
-    "own" | "upload_template" | "need_design"
-  >("own");
+  const [designOption, setDesignOption] = useState<"own" | "need_design">("own");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [templatePreview, setTemplatePreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -28,17 +25,17 @@ export default function BookingPanel({ pin, onClose }: BookingPanelProps) {
     phone: "",
     adMessage: "",
   });
+  const [parcelsToBook, setParcelsToBook] = useState(1);
   const [loading, setLoading] = useState(false);
   const touchStartX = useRef(0);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const templateInputRef = useRef<HTMLInputElement>(null);
 
   if (!pin) return null;
 
   const images = pin.images;
   const term = LEASE_TERMS[selectedTerm];
   const designFee = designOption === "need_design" ? 200 : 0;
-  const totalPrice = term.total + designFee;
+  const totalPrice = (term.total + designFee) * parcelsToBook;
 
   const handleFilePreview = (
     file: File,
@@ -62,6 +59,7 @@ export default function BookingPanel({ pin, onClose }: BookingPanelProps) {
         planName: term.name,
         months: term.months,
         monthlyPrice: term.monthlyRate,
+        parcels: parcelsToBook,
         totalPrice,
         designOption,
         designFee,
@@ -85,7 +83,7 @@ export default function BookingPanel({ pin, onClose }: BookingPanelProps) {
     setCurrentImg(0);
     setDesignOption("own");
     setLogoPreview(null);
-    setTemplatePreview(null);
+    setParcelsToBook(1);
     setFormData({ name: "", email: "", company: "", phone: "", adMessage: "" });
     onClose();
   };
@@ -208,6 +206,37 @@ export default function BookingPanel({ pin, onClose }: BookingPanelProps) {
             </div>
           </div>
 
+          {/* Parcel quantity — multi-deedz locations only */}
+          {pin.parcels > 1 && (
+            <div className="booking-parcels">
+              <label>Reserve Parcels at This Location</label>
+              <p className="booking-parcels-hint">
+                {pin.parcels} parcels available at this spot
+              </p>
+              <div className="parcel-stepper">
+                <button
+                  type="button"
+                  className="parcel-step-btn"
+                  onClick={() => setParcelsToBook((p) => Math.max(1, p - 1))}
+                  disabled={parcelsToBook <= 1}
+                >
+                  −
+                </button>
+                <span className="parcel-step-value">
+                  {parcelsToBook} <span className="parcel-step-of">of {pin.parcels}</span>
+                </span>
+                <button
+                  type="button"
+                  className="parcel-step-btn"
+                  onClick={() => setParcelsToBook((p) => Math.min(pin.parcels, p + 1))}
+                  disabled={parcelsToBook >= pin.parcels}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Design option */}
           <div className="booking-design-options">
             <label>Design &amp; Creative</label>
@@ -223,23 +252,8 @@ export default function BookingPanel({ pin, onClose }: BookingPanelProps) {
                 />
                 <span className="design-radio-dot" />
                 <div>
-                  <span className="design-radio-title">I have my own design</span>
-                  <span className="design-radio-desc">Upload your logo and tell us what to print</span>
-                </div>
-              </label>
-              <label
-                className={`design-radio${designOption === "upload_template" ? " active" : ""}`}
-              >
-                <input
-                  type="radio"
-                  name="designOption"
-                  checked={designOption === "upload_template"}
-                  onChange={() => setDesignOption("upload_template")}
-                />
-                <span className="design-radio-dot" />
-                <div>
-                  <span className="design-radio-title">Upload completed template</span>
-                  <span className="design-radio-desc">I designed the stencil using your template</span>
+                  <span className="design-radio-title">I'll design it using your template</span>
+                  <span className="design-radio-desc">Download our stencil template, add your design, and upload the completed file</span>
                 </div>
               </label>
               <label
@@ -262,92 +276,45 @@ export default function BookingPanel({ pin, onClose }: BookingPanelProps) {
             </div>
           </div>
 
-          {/* Ad details — shown for "own" and "need_design" */}
-          {designOption !== "upload_template" && (
-            <div className="booking-ad-details">
-              <label>Your Ad</label>
-              <textarea
-                placeholder="What do you want on the ad? Tagline, URL, promo code, QR target..."
-                rows={3}
-                value={formData.adMessage}
-                onChange={(e) =>
-                  setFormData({ ...formData, adMessage: e.target.value })
-                }
+          {/* Ad details — always shown */}
+          <div className="booking-ad-details">
+            <label>{designOption === "own" ? "Your Ad" : "Ad Brief"}</label>
+            <textarea
+              placeholder="Tagline, URL, promo code, QR target — tell us what goes on the stencil..."
+              rows={3}
+              value={formData.adMessage}
+              onChange={(e) =>
+                setFormData({ ...formData, adMessage: e.target.value })
+              }
+            />
+            <div className="booking-upload-row">
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*,.svg,.ai,.eps,.pdf,.psd"
+                className="sr-only"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFilePreview(f, setLogoPreview);
+                }}
               />
-              <div className="booking-upload-row">
-                <input
-                  ref={logoInputRef}
-                  type="file"
-                  accept="image/*,.svg,.ai,.eps,.pdf"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handleFilePreview(f, setLogoPreview);
-                  }}
-                />
-                <button
-                  type="button"
-                  className="booking-upload-btn"
-                  onClick={() => logoInputRef.current?.click()}
-                >
-                  {logoPreview ? (
-                    <img src={logoPreview} alt="Logo preview" className="upload-thumb" />
-                  ) : (
-                    <>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                      Upload Logo
-                    </>
-                  )}
-                </button>
-                <span className="upload-hint">PNG, SVG, AI, or PDF</span>
-              </div>
+              <button
+                type="button"
+                className="booking-upload-btn"
+                onClick={() => logoInputRef.current?.click()}
+              >
+                {logoPreview ? (
+                  <img src={logoPreview} alt="File preview" className="upload-thumb" />
+                ) : (
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    {designOption === "own" ? "Upload Completed Template" : "Upload Logo / Assets"}
+                  </>
+                )}
+              </button>
+              <span className="upload-hint">PNG, SVG, AI, PSD, or PDF</span>
             </div>
-          )}
-
-          {/* Template upload — shown for "upload_template" */}
-          {designOption === "upload_template" && (
-            <div className="booking-ad-details">
-              <label>Upload Your Stencil</label>
-              <p className="upload-template-hint">
-                Upload the completed template file you designed. We&rsquo;ll review and send to print.
-              </p>
-              <div className="booking-upload-row">
-                <input
-                  ref={templateInputRef}
-                  type="file"
-                  accept="image/*,.svg,.ai,.eps,.pdf,.psd"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handleFilePreview(f, setTemplatePreview);
-                  }}
-                />
-                <button
-                  type="button"
-                  className="booking-upload-btn template"
-                  onClick={() => templateInputRef.current?.click()}
-                >
-                  {templatePreview ? (
-                    <img src={templatePreview} alt="Template preview" className="upload-thumb" />
-                  ) : (
-                    <>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                      Upload Template File
-                    </>
-                  )}
-                </button>
-                <span className="upload-hint">SVG, AI, PSD, or PDF</span>
-              </div>
-              <textarea
-                placeholder="Any notes about your design..."
-                rows={2}
-                value={formData.adMessage}
-                onChange={(e) =>
-                  setFormData({ ...formData, adMessage: e.target.value })
-                }
-              />
-            </div>
-          )}
+          </div>
 
           {/* Price breakdown */}
           <div className="booking-pricing">
@@ -362,7 +329,13 @@ export default function BookingPanel({ pin, onClose }: BookingPanelProps) {
             {term.savings > 0 && (
               <div className="price-line savings">
                 <span>You save</span>
-                <span>${term.savings.toLocaleString()}</span>
+                <span>${(term.savings * parcelsToBook).toLocaleString()}</span>
+              </div>
+            )}
+            {parcelsToBook > 1 && (
+              <div className="price-line">
+                <span>Parcels</span>
+                <span>× {parcelsToBook}</span>
               </div>
             )}
             {designFee > 0 && (
@@ -414,13 +387,22 @@ export default function BookingPanel({ pin, onClose }: BookingPanelProps) {
                 setFormData({ ...formData, phone: e.target.value })
               }
             />
-            <button
-              type="submit"
-              className="btn btn-primary booking-submit"
-              disabled={loading}
-            >
-              {loading ? "Redirecting to payment..." : `${term.cta} \u2192`}
-            </button>
+            <div className="booking-cta-row">
+              <button
+                type="submit"
+                className="btn btn-primary booking-submit"
+                disabled={loading}
+              >
+                {loading ? "Redirecting..." : <>{term.cta} <span className="arrow">→</span></>}
+              </button>
+              <button
+                type="button"
+                className="booking-add-more"
+                onClick={handleClose}
+              >
+                + Add More Deedz
+              </button>
+            </div>
           </form>
         </>
       </div>
