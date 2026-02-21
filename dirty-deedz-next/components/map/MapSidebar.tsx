@@ -133,12 +133,6 @@ export default function MapSidebar({
         <div className="sidebar-actions">
           <button
             className="sidebar-action-btn lease"
-            onClick={() => {
-              const availablePin = filteredPins.find(
-                (p) => p.status === "available"
-              );
-              if (availablePin) onSelectPin(availablePin);
-            }}
           >
             <span className="sidebar-action-label">Advertiser</span>
             Lease a Deedz
