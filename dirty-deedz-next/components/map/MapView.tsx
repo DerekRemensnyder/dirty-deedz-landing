@@ -16,9 +16,17 @@ interface MapViewProps {
   selectedPin: MapPin | null;
   onSelectPin: (pin: MapPin | null) => void;
   onBookPin: (pin: MapPin) => void;
+  onSavePin: (pin: MapPin, opts?: { termIndex: number; parcels: number; designOption: "own" | "need_design" }) => void;
+  savedIds: Set<number>;
   cardView: boolean;
   onToggleCardView: () => void;
 }
+
+const BrandArrow = ({ size = 9, fill = "currentColor", style }: { size?: number; fill?: string; style?: React.CSSProperties }) => (
+  <svg viewBox="0 0 205.82 196.86" width={size} height={size} fill={fill} style={{ transform: "rotate(-90deg)", ...style }}>
+    <path d="M123,179.88l78.22-75.9c6-5.82,6.15-15.41.32-21.41h0c-5.82-6-15.41-6.15-21.41-.32l-62.86,60.99,1.93-127.87C119.32,7.01,112.65.13,104.28,0h0c-8.36-.13-15.24,6.55-15.37,14.91l-1.93,127.85-60.98-62.84c-5.82-6-15.41-6.15-21.41-.32h0c-6,5.82-6.15,15.41-.32,21.41l75.9,78.22,14.18,14.62c3.82,3.93,10.1,4.03,14.03.21l14.62-14.18Z" />
+  </svg>
+);
 
 const LEGEND_ITEMS = [
   { label: "Available", color: STATUS_COLORS.available },
@@ -33,6 +41,8 @@ export default function MapView({
   selectedPin,
   onSelectPin,
   onBookPin,
+  onSavePin,
+  savedIds,
   cardView,
   onToggleCardView,
 }: MapViewProps) {
@@ -71,6 +81,7 @@ export default function MapView({
           <div className="card-grid-inner">
             {pagedPins.map((pin) => {
               const tag = getPinTag(pin);
+              const isSaved = savedIds.has(pin.id);
               return (
                 <div
                   key={pin.id}
@@ -97,9 +108,16 @@ export default function MapView({
 
                   {/* Content */}
                   <div className="map-pin-card-body">
-                    <span className="map-pin-card-tag" style={{ color: tag.color }}>
-                      {tag.label.toUpperCase()}
-                    </span>
+                    {isSaved ? (
+                      <span className="map-pin-card-tag map-pin-card-tag--saved">
+                        <BrandArrow size={7} fill="#DF3257" style={{ marginRight: 4 }} />
+                        SAVED
+                      </span>
+                    ) : (
+                      <span className="map-pin-card-tag" style={{ color: tag.color }}>
+                        {tag.label.toUpperCase()}
+                      </span>
+                    )}
                     <p className="map-pin-card-name">{pin.name}</p>
                     <p className="map-pin-card-address">{pin.address}</p>
                     <p className="map-pin-card-desc">{pin.description}</p>
@@ -114,16 +132,16 @@ export default function MapView({
                         <span className="map-pin-card-price-amount">$333</span>
                         <span className="map-pin-card-price-unit">/mo</span>
                       </div>
-                      {pin.status === "available" ? (
-                        <button
-                          className="btn btn-primary map-pin-card-cta"
-                          onClick={(e) => { e.stopPropagation(); onBookPin(pin); }}
-                        >
-                          Lease a Deedz <span className="arrow">→</span>
-                        </button>
-                      ) : (
-                        <div className="map-pin-card-cta-soon">Coming Soon</div>
-                      )}
+                      <button
+                        className="btn btn-primary map-pin-card-cta"
+                        onClick={(e) => { e.stopPropagation(); onBookPin(pin); }}
+                      >
+                        {pin.status === "available" ? (
+                          <>Lease a Deedz <span className="arrow"><BrandArrow /></span></>
+                        ) : (
+                          <>Secure Your Deedz <span className="arrow"><BrandArrow /></span></>
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -194,19 +212,28 @@ export default function MapView({
                   handleMarkerClick(pin);
                 }}
               >
-                <div
-                  className={`map-marker${selectedPin?.id === pin.id ? " active" : ""}`}
-                  style={{ "--pin-color": color } as React.CSSProperties}
-                >
-                  <span className="marker-dot" />
-                  <span className="marker-ring" />
-                </div>
+                {savedIds.has(pin.id) ? (
+                  <div className={`map-marker-arrow${selectedPin?.id === pin.id ? " active" : ""}`}>
+                    <svg viewBox="0 0 205.82 196.86" width="22" height="22" fill="#DF3257">
+                      <path d="M123,179.88l78.22-75.9c6-5.82,6.15-15.41.32-21.41h0c-5.82-6-15.41-6.15-21.41-.32l-62.86,60.99,1.93-127.87C119.32,7.01,112.65.13,104.28,0h0c-8.36-.13-15.24,6.55-15.37,14.91l-1.93,127.85-60.98-62.84c-5.82-6-15.41-6.15-21.41-.32h0c-6,5.82-6.15,15.41-.32,21.41l75.9,78.22,14.18,14.62c3.82,3.93,10.1,4.03,14.03.21l14.62-14.18Z" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div
+                    className={`map-marker${selectedPin?.id === pin.id ? " active" : ""}`}
+                    style={{ "--pin-color": color } as React.CSSProperties}
+                  >
+                    <span className="marker-dot" />
+                    <span className="marker-ring" />
+                  </div>
+                )}
               </Marker>
             );
           })}
 
           {selectedPin && (() => {
             const tag = getPinTag(selectedPin);
+            const isSaved = savedIds.has(selectedPin.id);
             return (
               <Popup
                 longitude={selectedPin.lng}
@@ -218,12 +245,19 @@ export default function MapView({
                 className="map-popup"
               >
                 <div className="popup-inner">
-                  <span
-                    className="popup-status"
-                    style={{ color: tag.color }}
-                  >
-                    {tag.label}
-                  </span>
+                  {isSaved ? (
+                    <span className="popup-status popup-status--saved">
+                      <BrandArrow size={7} fill="#DF3257" style={{ marginRight: 4 }} />
+                      SAVED
+                    </span>
+                  ) : (
+                    <span
+                      className="popup-status"
+                      style={{ color: tag.color }}
+                    >
+                      {tag.label}
+                    </span>
+                  )}
                   <h3 className="popup-title">{selectedPin.name}</h3>
                   <p className="popup-address">{selectedPin.address}</p>
                   <p className="popup-desc">{selectedPin.description}</p>
@@ -241,16 +275,18 @@ export default function MapView({
                     $333<span>/mo</span>
                   </div>
 
-                  {selectedPin.status === "available" ? (
-                    <button
-                      className="btn btn-primary popup-cta"
-                      onClick={() => onBookPin(selectedPin)}
-                    >
-                      Lease a Deedz <span className="arrow">→</span>
-                    </button>
-                  ) : (
-                    <div className="popup-cta-soon">Coming Soon</div>
-                  )}
+                  <div className="popup-cta-row">
+                    {selectedPin.status === "available" ? (
+                      <button
+                        className="btn btn-primary popup-cta"
+                        onClick={() => onBookPin(selectedPin)}
+                      >
+                        Lease a Deedz <span className="arrow"><BrandArrow /></span>
+                      </button>
+                    ) : (
+                      <div className="popup-cta-soon">Coming Soon</div>
+                    )}
+                  </div>
                 </div>
               </Popup>
             );

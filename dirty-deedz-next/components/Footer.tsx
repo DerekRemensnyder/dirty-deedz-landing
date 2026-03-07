@@ -11,6 +11,7 @@ export default function Footer() {
             <a href="#scroll-tell">Property Owners</a>
             <a href="#map-feature">Deedz</a>
             <a href="/map">Map</a>
+            <a href="/join">Become a Contractor</a>
             <a href="#pricing">Pricing</a>
           </div>
           <div className="footer-col">
@@ -57,6 +58,10 @@ export default function Footer() {
               </a>
             </div>
           </div>
+        </div>
+        <div className="footer-cta">
+          <span>Own a storefront or sidewalk?</span>
+          <a href="/list">List Your Deedz &rarr;</a>
         </div>
         <div className="footer-bottom">
           <span>{"\u00A9"} 2026 Dirty Deedz{"\u2122"}. All rights reserved.</span>

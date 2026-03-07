@@ -4,11 +4,8 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 const HASH_LINKS = [
-  { href: "#about", label: "About" },
   { href: "#how-it-works", label: "How It Works" },
-  { href: "#scroll-tell", label: "Property Owners" },
-  { href: "#map-feature", label: "Deedz" },
-  { href: "#ad-guidelines", label: "Ads" },
+  { href: "#map-feature", label: "Find Your Deedz" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
 ];
@@ -77,12 +74,6 @@ export default function Nav() {
                 {link.label}
               </a>
             ))}
-            <a
-              href="/map"
-              className={pathname === "/map" ? "active" : ""}
-            >
-              Map
-            </a>
           </div>
 
           <div className="nav-cta">
@@ -117,9 +108,6 @@ export default function Nav() {
             {link.label}
           </a>
         ))}
-        <a href="/map" onClick={closeMobile}>
-          Map
-        </a>
         <a
           href="/map"
           className="btn btn-primary"

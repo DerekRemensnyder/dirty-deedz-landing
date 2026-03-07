@@ -42,7 +42,6 @@ interface MapSidebarProps {
   onFiltersChange: (f: MapFilters) => void;
   open: boolean;
   onToggle: () => void;
-  onListDeedz: () => void;
 }
 
 export default function MapSidebar({
@@ -52,7 +51,6 @@ export default function MapSidebar({
   onFiltersChange,
   open,
   onToggle,
-  onListDeedz,
 }: MapSidebarProps) {
   const counts = useMemo(() => {
     const s: Record<string, number> = {};
@@ -127,23 +125,6 @@ export default function MapSidebar({
       <aside className={`map-sidebar${open ? " open" : ""}`}>
         <div className="sidebar-header">
           <h2>Browse Deedz</h2>
-        </div>
-
-        {/* Action buttons */}
-        <div className="sidebar-actions">
-          <button
-            className="sidebar-action-btn lease"
-          >
-            <span className="sidebar-action-label">Advertiser</span>
-            Lease a Deedz
-          </button>
-          <button
-            className="sidebar-action-btn list"
-            onClick={onListDeedz}
-          >
-            <span className="sidebar-action-label">Property Owner</span>
-            List Your Deedz
-          </button>
         </div>
 
         {/* State + City dropdowns */}

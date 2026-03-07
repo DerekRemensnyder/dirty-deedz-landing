@@ -16,6 +16,8 @@ export default function ListingPanel({ open, onClose }: ListingPanelProps) {
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [idPreview, setIdPreview] = useState<string | null>(null);
   const [deedPreview, setDeedPreview] = useState<string | null>(null);
@@ -47,9 +49,53 @@ export default function ListingPanel({ open, onClose }: ListingPanelProps) {
     r.readAsDataURL(file);
   };
 
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const fd = new FormData();
+      fd.append("name", formData.name);
+      fd.append("email", formData.email);
+      fd.append("phone", formData.phone);
+      fd.append("businessName", formData.businessName);
+      fd.append("address", formData.address);
+      fd.append("neighborhood", formData.neighborhood);
+      fd.append("parcelCount", formData.parcelCount);
+      fd.append("notes", formData.notes);
+      fd.append("registeredName", formData.registeredName);
+      fd.append("ein", formData.ein);
+      fd.append("signature", signature);
+
+      // Attach files from refs
+      const photoFile = photoRef.current?.files?.[0];
+      if (photoFile) fd.append("sidewalkPhoto", photoFile);
+      const idFile = idRef.current?.files?.[0];
+      if (idFile) fd.append("idDocument", idFile);
+      const deedFile = deedRef.current?.files?.[0];
+      if (deedFile) fd.append("deed", deedFile);
+
+      const res = await fetch("/api/listings", { method: "POST", body: fd });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setSubmitError(data.error || "Something went wrong. Please try again.");
+        return;
+      }
+
+      setSubmitted(true);
+    } catch {
+      setSubmitError("Network error. Please check your connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleClose = () => {
     setStep(1);
     setSubmitted(false);
+    setSubmitting(false);
+    setSubmitError(null);
     setPhotoPreview(null);
     setIdPreview(null);
     setDeedPreview(null);
@@ -319,17 +365,21 @@ export default function ListingPanel({ open, onClose }: ListingPanelProps) {
                   </p>
                 </div>
 
+                {submitError && (
+                  <p style={{ color: "#ef4444", fontSize: "14px", margin: "12px 0 0" }}>{submitError}</p>
+                )}
+
                 <div className="listing-cta-row">
-                  <button type="button" className="booking-add-more" onClick={() => setStep(2)}>
+                  <button type="button" className="booking-add-more" onClick={() => setStep(2)} disabled={submitting}>
                     <span className="arrow-back">←</span> Back
                   </button>
                   <button
                     type="button"
                     className="btn btn-primary listing-cta"
-                    disabled={!step3Valid}
-                    onClick={() => setSubmitted(true)}
+                    disabled={!step3Valid || submitting}
+                    onClick={handleSubmit}
                   >
-                    Submit for Review <span className="arrow">→</span>
+                    {submitting ? "Submitting…" : "Submit for Review"} {!submitting && <span className="arrow">→</span>}
                   </button>
                 </div>
               </div>

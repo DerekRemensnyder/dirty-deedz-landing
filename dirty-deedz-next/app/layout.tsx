@@ -5,7 +5,7 @@ import "./globals.css";
 const archivo = Archivo({
   subsets: ["latin"],
   variable: "--font-archivo",
-  weight: ["400", "500"],
+  weight: ["400", "500", "700", "800"],
 });
 
 const roboto = Roboto({

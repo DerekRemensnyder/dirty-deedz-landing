@@ -9,25 +9,32 @@ export default function ScrollTell() {
     const track = trackRef.current;
     if (!track) return;
 
+    const textEl = track.querySelector<HTMLElement>(".scroll-tell-text");
     const cards = track.querySelectorAll<HTMLElement>(".scroll-tell-card");
-    const totalCards = cards.length;
 
     const handleScroll = () => {
       const rect = track.getBoundingClientRect();
-      const trackHeight = track.scrollHeight - window.innerHeight;
       const scrolled = -rect.top;
-      const progress = Math.min(Math.max(scrolled / trackHeight, 0), 1);
-      const activeIndex = Math.min(
-        Math.floor(progress * totalCards),
-        totalCards - 1
-      );
 
+      // Section hasn't entered sticky range yet — hide everything
+      if (scrolled <= 0) {
+        textEl?.classList.remove("active");
+        cards.forEach((c) => c.classList.remove("active"));
+        return;
+      }
+
+      const sectionRange = rect.height - window.innerHeight;
+      const progress = sectionRange > 0 ? Math.min(scrolled / sectionRange, 1) : 1;
+
+      // 4 steps: 0 = text copy, 1 = card 01, 2 = card 02, 3 = card 03
+      const step = Math.min(Math.floor(progress * 4), 3);
+
+      // Text animates in on step 0 (first entry into sticky range)
+      textEl?.classList.toggle("active", step >= 0);
+
+      // Each card gets its own scroll step
       cards.forEach((card, i) => {
-        if (i <= activeIndex) {
-          card.classList.add("active");
-        } else {
-          card.classList.remove("active");
-        }
+        card.classList.toggle("active", step >= i + 1);
       });
     };
 
@@ -54,12 +61,8 @@ export default function ScrollTell() {
               </p>
               <div className="scroll-tell-ctas">
                 <div className="scroll-tell-cta-block">
-                  <span className="scroll-tell-cta-micro">Pick a spot. Own the block.</span>
-                  <a href="/map" className="btn btn-primary">Lease a Deedz</a>
-                </div>
-                <div className="scroll-tell-cta-block">
-                  <span className="scroll-tell-cta-micro">Your sidewalk. Your revenue.</span>
-                  <a href="/map?list=true" className="btn btn-outline">List Your Deedz</a>
+                  <span className="scroll-tell-cta-micro">Your Sidewalk. Your Revenue.</span>
+                  <a href="/list" className="btn scroll-tell-btn">List Your Deedz <span className="arrow">→</span></a>
                 </div>
               </div>
             </div>
