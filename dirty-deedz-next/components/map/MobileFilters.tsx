@@ -33,8 +33,8 @@ export default function MobileFilters({
   cardView,
   onToggleCardView,
 }: MobileFiltersProps) {
-  const [neighborhoodOpen, setNeighborhoodOpen] = useState(false);
-  const [trafficOpen, setTrafficOpen] = useState(false);
+  const [neighborhoodOpen, setNeighborhoodOpen] = useState(true);
+  const [trafficOpen, setTrafficOpen] = useState(true);
 
   const counts = useMemo(() => {
     const s: Record<string, number> = {};
