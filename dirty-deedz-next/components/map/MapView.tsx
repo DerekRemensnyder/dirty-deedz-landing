@@ -82,6 +82,11 @@ export default function MapView({
             {pagedPins.map((pin) => {
               const tag = getPinTag(pin);
               const isSaved = savedIds.has(pin.id);
+              const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+              const cardSatelliteUrl = mapboxToken
+                ? `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/${pin.lng},${pin.lat},17,0/400x300@2x?access_token=${mapboxToken}`
+                : null;
+              const cardImgSrc = cardSatelliteUrl ?? pin.images?.[0] ?? null;
               return (
                 <div
                   key={pin.id}
@@ -93,8 +98,8 @@ export default function MapView({
                 >
                   {/* Image */}
                   <div className="map-pin-card-img">
-                    {pin.images?.[0] ? (
-                      <img src={pin.images[0]} alt={pin.name} />
+                    {cardImgSrc ? (
+                      <img src={cardImgSrc} alt={pin.name} />
                     ) : (
                       <div className="map-pin-card-img-placeholder">
                         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5">

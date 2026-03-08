@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import {
   MapPin,
   LEASE_TERMS,
@@ -12,31 +12,19 @@ import type { SavedDeedz } from "./SavedTray";
 interface BookingPanelProps {
   pin: MapPin | null;
   onClose: () => void;
-  savedDeedz?: SavedDeedz[];
   onSaveDeedz: (items: SavedDeedz[]) => void;
-  multiCheckout?: boolean;
-  onEditPin?: (pin: MapPin) => void;
-  prefillDeedz?: SavedDeedz[];
 }
 
 export default function BookingPanel({
   pin,
   onClose,
-  savedDeedz = [],
   onSaveDeedz,
-  multiCheckout = false,
-  onEditPin,
-  prefillDeedz = [],
 }: BookingPanelProps) {
   const [selectedTerm, setSelectedTerm] = useState(0);
   const [currentImg, setCurrentImg] = useState(0);
   const [designOption, setDesignOption] = useState<"own" | "need_design">("own");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    company: "",
-    phone: "",
     headline: "",
     subheadline: "",
     callToAction: "",
@@ -56,7 +44,6 @@ export default function BookingPanel({
   const [perParcelSubheadlines, setPerParcelSubheadlines] = useState<Record<number, string>>({});
   const [perParcelCTAs, setPerParcelCTAs] = useState<Record<number, string>>({});
   const [showErrors, setShowErrors] = useState(false);
-
   const handleFilePreview = (
     file: File,
     setter: (url: string | null) => void
@@ -66,310 +53,15 @@ export default function BookingPanel({
     reader.readAsDataURL(file);
   };
 
-  // Pre-fill form when editing an existing saved deed
-  useEffect(() => {
-    if (!pin || prefillDeedz.length === 0) return;
-    const first = prefillDeedz[0];
-    setSelectedTerm(first.termIndex);
-    setDesignOption(first.designOption);
-    setFormData((prev) => ({
-      ...prev,
-      headline: first.headline ?? "",
-      subheadline: first.subheadline ?? "",
-      callToAction: first.callToAction ?? "",
-      adMessage: first.adMessage ?? "",
-    }));
-    if (prefillDeedz.length > 1) {
-      setParcelsToBook(prefillDeedz.length);
-      const headlines: Record<number, string> = {};
-      const subheadlines: Record<number, string> = {};
-      const ctas: Record<number, string> = {};
-      const messages: Record<number, string> = {};
-      const designs: Record<number, "own" | "need_design"> = {};
-      const terms: Record<number, number> = {};
-      prefillDeedz.forEach((item) => {
-        headlines[item.parcelIndex] = item.headline ?? "";
-        subheadlines[item.parcelIndex] = item.subheadline ?? "";
-        ctas[item.parcelIndex] = item.callToAction ?? "";
-        messages[item.parcelIndex] = item.adMessage ?? "";
-        designs[item.parcelIndex] = item.designOption;
-        terms[item.parcelIndex] = item.termIndex;
-      });
-      setPerParcelHeadlines(headlines);
-      setPerParcelSubheadlines(subheadlines);
-      setPerParcelCTAs(ctas);
-      setPerParcelMessages(messages);
-      setPerParcelDesignOptions(designs);
-      setPerParcelTerms(terms);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pin?.id]);
-
   if (!pin) return null;
-
-  // ── Multi-checkout mode — read-only punchlist ──
-  if (multiCheckout && savedDeedz.length > 0) {
-    const grandTotal = savedDeedz.reduce((sum, item) => {
-      const term = LEASE_TERMS[item.termIndex];
-      const designFee = item.designOption === "need_design" ? 200 : 0;
-      return sum + term.total + designFee;
-    }, 0);
-
-    const handleMultiSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setLoading(true);
-
-      const items = savedDeedz.map((item) => {
-        const term = LEASE_TERMS[item.termIndex];
-        const designFee = item.designOption === "need_design" ? 200 : 0;
-        const totalPrice = term.total + designFee;
-        const combinedMessage = [
-          item.headline,
-          item.subheadline,
-          item.callToAction ? `CTA: ${item.callToAction}` : "",
-          item.adMessage,
-        ]
-          .filter(Boolean)
-          .join(" | ");
-        return {
-          pinName: item.pin.name,
-          address: item.pin.address,
-          months: term.months,
-          monthlyPrice: term.monthlyRate,
-          parcels: 1,
-          parcelIndex: item.parcelIndex,
-          totalParcels: item.pin.parcels,
-          totalPrice,
-          designOption: item.designOption,
-          designFee,
-          adMessage: combinedMessage,
-        };
-      });
-
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items,
-          customerName: formData.name,
-          customerEmail: formData.email,
-        }),
-      });
-
-      const { url } = await res.json();
-      if (url) {
-        window.location.href = url;
-      } else {
-        setLoading(false);
-      }
-    };
-
-    const handleClose = () => {
-      setLoading(false);
-      setFormData({
-        name: "",
-        email: "",
-        company: "",
-        phone: "",
-        headline: "",
-        subheadline: "",
-        callToAction: "",
-        adMessage: "",
-      });
-      onClose();
-    };
-
-    return (
-      <div className={`booking-overlay${pin ? " open" : ""}`}>
-        <div className="booking-panel booking-panel--multi">
-          <button className="booking-close" onClick={handleClose} aria-label="Close">
-            &times;
-          </button>
-
-          <div className="booking-pin-summary">
-            <span className="booking-status" style={{ color: "#111" }}>
-              CHECKOUT
-            </span>
-            <h3>Your Saved Deedz ({savedDeedz.length})</h3>
-            <p className="booking-address">
-              Review your order — go back to the tray to make changes
-            </p>
-          </div>
-
-          {/* Punchlist cards — read-only */}
-          <div className="multi-checkout-items">
-            {savedDeedz.map((item) => {
-              const itemKey = `${item.pin.id}-${item.parcelIndex}`;
-              const term = LEASE_TERMS[item.termIndex];
-              const designFee = item.designOption === "need_design" ? 200 : 0;
-              const subtotal = term.total + designFee;
-              const designLabel =
-                item.designOption === "need_design"
-                  ? "Dirty Deedz design (+$200)"
-                  : "Client template";
-
-              return (
-                <div className="checkout-punchlist-card" key={itemKey}>
-                  <div className="checkout-punchlist-card-header">
-                    <div>
-                      <span className="checkout-punchlist-card-name">
-                        {item.pin.name}
-                        {item.pin.parcels > 1 && (
-                          <span className="checkout-punchlist-card-parcel">
-                            {" "}· Parcel {item.parcelIndex} of {item.pin.parcels}
-                          </span>
-                        )}
-                      </span>
-                      <p className="checkout-punchlist-card-address">
-                        {item.pin.address}
-                      </p>
-                    </div>
-                    <span className="checkout-punchlist-card-price">
-                      ${subtotal.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="checkout-punchlist-card-rows">
-                    <div className="checkout-punchlist-row">
-                      <span className="checkout-punchlist-row-label">Lease</span>
-                      <span className="checkout-punchlist-row-value">
-                        {term.name} · {term.label} · ${term.monthlyRate}/mo
-                      </span>
-                    </div>
-                    <div className="checkout-punchlist-row">
-                      <span className="checkout-punchlist-row-label">Design</span>
-                      <span className="checkout-punchlist-row-value">{designLabel}</span>
-                    </div>
-                    {item.headline ? (
-                      <div className="checkout-punchlist-row">
-                        <span className="checkout-punchlist-row-label">Headline</span>
-                        <span className="checkout-punchlist-row-value">
-                          {item.headline}
-                        </span>
-                      </div>
-                    ) : null}
-                    {item.subheadline ? (
-                      <div className="checkout-punchlist-row">
-                        <span className="checkout-punchlist-row-label">Subhead</span>
-                        <span className="checkout-punchlist-row-value">
-                          {item.subheadline}
-                        </span>
-                      </div>
-                    ) : null}
-                    {item.callToAction ? (
-                      <div className="checkout-punchlist-row">
-                        <span className="checkout-punchlist-row-label">CTA</span>
-                        <span className="checkout-punchlist-row-value">
-                          {item.callToAction}
-                        </span>
-                      </div>
-                    ) : null}
-                    {item.adMessage ? (
-                      <div className="checkout-punchlist-row">
-                        <span className="checkout-punchlist-row-label">Notes</span>
-                        <span
-                          className="checkout-punchlist-row-value"
-                          style={{ fontStyle: "italic" }}
-                        >
-                          {item.adMessage}
-                        </span>
-                      </div>
-                    ) : null}
-                    {item.fileAttached !== undefined && (
-                      <div className="checkout-punchlist-row">
-                        <span className="checkout-punchlist-row-label">File</span>
-                        <span
-                          className="checkout-punchlist-row-value"
-                          style={{ color: item.fileAttached ? "#d5ff45" : "#888" }}
-                        >
-                          {item.fileAttached ? "Uploaded ✓" : "No file uploaded"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  {onEditPin && (
-                    <div className="checkout-punchlist-card-edit">
-                      <button
-                        type="button"
-                        className="checkout-punchlist-edit-btn"
-                        onClick={() => onEditPin(item.pin)}
-                      >
-                        Edit Ad Copy
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Grand total */}
-          <div className="booking-pricing">
-            <div className="price-line total">
-              <span>
-                Grand Total ({savedDeedz.length}{" "}
-                {savedDeedz.length === 1 ? "Deedz" : "Deedz"})
-              </span>
-              <span>${grandTotal.toLocaleString()}</span>
-            </div>
-          </div>
-
-          {/* Contact form */}
-          <form className="booking-form" onSubmit={handleMultiSubmit}>
-            <label>Your Details</label>
-            <input
-              type="text"
-              placeholder="Full Name"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            />
-            <input
-              type="text"
-              placeholder="Company (optional)"
-              value={formData.company}
-              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-            />
-            <input
-              type="tel"
-              placeholder="Phone"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            />
-            <div className="booking-cta-row">
-              <button
-                type="submit"
-                className="btn btn-primary booking-submit"
-                disabled={loading}
-              >
-                {loading ? (
-                  "Redirecting..."
-                ) : (
-                  <>
-                    Checkout All Deedz
-                    <span className="deedz-arrow">
-                      <svg viewBox="0 0 205.82 196.86" width="9" height="9" fill="currentColor" style={{ transform: "rotate(-90deg)" }}>
-                        <path d="M123,179.88l78.22-75.9c6-5.82,6.15-15.41.32-21.41h0c-5.82-6-15.41-6.15-21.41-.32l-62.86,60.99,1.93-127.87C119.32,7.01,112.65.13,104.28,0h0c-8.36-.13-15.24,6.55-15.37,14.91l-1.93,127.85-60.98-62.84c-5.82-6-15.41-6.15-21.41-.32h0c-6,5.82-6.15,15.41-.32,21.41l75.9,78.22,14.18,14.62c3.82,3.93,10.1,4.03,14.03.21l14.62-14.18Z" />
-                      </svg>
-                    </span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   // ── Single-pin config mode ──
   const images = pin.images;
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  const satelliteUrl = mapboxToken
+    ? `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/${pin.lng},${pin.lat},17,0/400x300@2x?access_token=${mapboxToken}`
+    : null;
+  const displayImages = satelliteUrl ? [satelliteUrl, ...images] : images;
   const term = LEASE_TERMS[selectedTerm];
   const designFee = designOption === "need_design" ? 200 : 0;
   const totalDesignFee =
@@ -395,17 +87,17 @@ export default function BookingPanel({
     parcelsToBook > 1
       ? Array.from({ length: parcelsToBook }, (_, i) => i + 1).every((idx) => {
           const pDesign = perParcelDesignOptions[idx] ?? "own";
+          if (pDesign === "own") return !!perParcelFiles[idx];
           return (
             (perParcelHeadlines[idx]?.trim().length ?? 0) > 0 &&
-            (perParcelCTAs[idx]?.trim().length ?? 0) > 0 &&
-            (pDesign === "need_design" || !!perParcelFiles[idx])
+            (perParcelCTAs[idx]?.trim().length ?? 0) > 0
           );
         })
+      : designOption === "own"
+      ? !!logoPreview
       : formData.headline.trim().length > 0 &&
-        formData.callToAction.trim().length > 0 &&
-        (designOption === "need_design" || !!logoPreview);
+        formData.callToAction.trim().length > 0;
 
-  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   const locationPreviewUrl = mapboxToken
     ? `https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${pin.lng},${pin.lat},17,0/400x300@2x?access_token=${mapboxToken}`
     : null;
@@ -443,7 +135,21 @@ export default function BookingPanel({
             },
           ];
     onSaveDeedz(items);
-    handleClose();
+    // Reset single-parcel form state; parent transitions panel to checkout mode
+    setSelectedTerm(0);
+    setCurrentImg(0);
+    setDesignOption("own");
+    setLogoPreview(null);
+    setParcelsToBook(1);
+    setFormData({ headline: "", subheadline: "", callToAction: "", adMessage: "" });
+    setPerParcelMessages({});
+    setPerParcelFiles({});
+    setPerParcelDesignOptions({});
+    setPerParcelTerms({});
+    setPerParcelHeadlines({});
+    setPerParcelSubheadlines({});
+    setPerParcelCTAs({});
+    setShowErrors(false);
   };
 
   const handleClose = () => {
@@ -453,16 +159,7 @@ export default function BookingPanel({
     setDesignOption("own");
     setLogoPreview(null);
     setParcelsToBook(1);
-    setFormData({
-      name: "",
-      email: "",
-      company: "",
-      phone: "",
-      headline: "",
-      subheadline: "",
-      callToAction: "",
-      adMessage: "",
-    });
+    setFormData({ headline: "", subheadline: "", callToAction: "", adMessage: "" });
     setPerParcelMessages({});
     setPerParcelFiles({});
     setPerParcelDesignOptions({});
@@ -516,7 +213,7 @@ export default function BookingPanel({
 
         <>
           {/* Image carousel */}
-          {images.length > 0 && (
+          {displayImages.length > 0 && (
             <div
               className="booking-carousel"
               onTouchStart={handleTouchStart}
@@ -526,7 +223,7 @@ export default function BookingPanel({
                 className="booking-carousel-track"
                 style={{ transform: `translateX(-${currentImg * 100}%)` }}
               >
-                {images.map((src, i) => (
+                {displayImages.map((src, i) => (
                   <img
                     key={i}
                     src={src}
@@ -536,10 +233,10 @@ export default function BookingPanel({
                   />
                 ))}
               </div>
-              {images.length > 1 && (
+              {displayImages.length > 1 && (
                 <>
                   <div className="booking-carousel-dots">
-                    {images.map((_, i) => (
+                    {displayImages.map((_, i) => (
                       <button
                         key={i}
                         className={`booking-carousel-dot${
@@ -559,7 +256,7 @@ export default function BookingPanel({
                       &#8249;
                     </button>
                   )}
-                  {currentImg < images.length - 1 && (
+                  {currentImg < displayImages.length - 1 && (
                     <button
                       className="booking-carousel-arrow next"
                       onClick={() => setCurrentImg((p) => p + 1)}
@@ -795,80 +492,84 @@ export default function BookingPanel({
                         </label>
                       </div>
 
-                      {/* Structured copy fields */}
+                      {/* Structured copy fields — conditional by design option */}
                       <div className="ad-copy-fields">
-                        <div className="ad-copy-field">
-                          <label>
-                            Headline{" "}
-                            <span className="required-star">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Main headline for your ad"
-                            className={showErrors && !(perParcelHeadlines[idx]?.trim()) ? "field-error" : undefined}
-                            value={perParcelHeadlines[idx] ?? ""}
-                            onChange={(e) =>
-                              setPerParcelHeadlines((prev) => ({
-                                ...prev,
-                                [idx]: e.target.value,
-                              }))
-                            }
-                          />
-                          {showErrors && !(perParcelHeadlines[idx]?.trim()) && (
-                            <span className="ad-copy-field-error-msg">Required</span>
-                          )}
-                        </div>
-                        <div className="ad-copy-field">
-                          <label>Subheadline</label>
-                          <input
-                            type="text"
-                            placeholder="Secondary line (optional)"
-                            value={perParcelSubheadlines[idx] ?? ""}
-                            onChange={(e) =>
-                              setPerParcelSubheadlines((prev) => ({
-                                ...prev,
-                                [idx]: e.target.value,
-                              }))
-                            }
-                          />
-                        </div>
-                        <div className="ad-copy-field">
-                          <label>
-                            Call to Action{" "}
-                            <span className="required-star">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="URL, phone number, or address"
-                            className={showErrors && !(perParcelCTAs[idx]?.trim()) ? "field-error" : undefined}
-                            value={perParcelCTAs[idx] ?? ""}
-                            onChange={(e) =>
-                              setPerParcelCTAs((prev) => ({
-                                ...prev,
-                                [idx]: e.target.value,
-                              }))
-                            }
-                          />
-                          {showErrors && !(perParcelCTAs[idx]?.trim()) && (
-                            <span className="ad-copy-field-error-msg">Required</span>
-                          )}
-                        </div>
                         {pDesign === "need_design" && (
-                          <div className="ad-copy-field">
-                            <label>Notes for design team</label>
-                            <textarea
-                              placeholder="Colors, style preferences, any extra details..."
-                              rows={2}
-                              value={perParcelMessages[idx] ?? ""}
-                              onChange={(e) =>
-                                setPerParcelMessages((prev) => ({
-                                  ...prev,
-                                  [idx]: e.target.value,
-                                }))
-                              }
-                            />
-                          </div>
+                          <>
+                            <div className="ad-copy-field">
+                              <label>
+                                Headline{" "}
+                                <span className="required-star">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="Main headline for your ad"
+                                className={showErrors && !(perParcelHeadlines[idx]?.trim()) ? "field-error" : undefined}
+                                value={perParcelHeadlines[idx] ?? ""}
+                                onChange={(e) =>
+                                  setPerParcelHeadlines((prev) => ({
+                                    ...prev,
+                                    [idx]: e.target.value,
+                                  }))
+                                }
+                              />
+                              {showErrors && !(perParcelHeadlines[idx]?.trim()) && (
+                                <span className="ad-copy-field-error-msg">Required</span>
+                              )}
+                            </div>
+                            <div className="ad-copy-field">
+                              <label>Subheadline</label>
+                              <input
+                                type="text"
+                                placeholder="Secondary line (optional)"
+                                value={perParcelSubheadlines[idx] ?? ""}
+                                onChange={(e) =>
+                                  setPerParcelSubheadlines((prev) => ({
+                                    ...prev,
+                                    [idx]: e.target.value,
+                                  }))
+                                }
+                              />
+                            </div>
+                            <div className="ad-copy-field">
+                              <label>
+                                Call to Action{" "}
+                                <span className="required-star">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="URL, phone number, or address"
+                                className={showErrors && !(perParcelCTAs[idx]?.trim()) ? "field-error" : undefined}
+                                value={perParcelCTAs[idx] ?? ""}
+                                onChange={(e) =>
+                                  setPerParcelCTAs((prev) => ({
+                                    ...prev,
+                                    [idx]: e.target.value,
+                                  }))
+                                }
+                              />
+                              {showErrors && !(perParcelCTAs[idx]?.trim()) && (
+                                <span className="ad-copy-field-error-msg">Required</span>
+                              )}
+                            </div>
+                          </>
                         )}
+                        <div className="ad-copy-field">
+                          <label>{pDesign === "own" ? "Message" : "Notes for design team"}</label>
+                          <textarea
+                            placeholder={pDesign === "own"
+                              ? "Any notes for your template (optional)..."
+                              : "Colors, style preferences, any extra details..."}
+                            rows={2}
+                            value={perParcelMessages[idx] ?? ""}
+                            onChange={(e) =>
+                              setPerParcelMessages((prev) => ({
+                                ...prev,
+                                [idx]: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
                       </div>
 
                       {/* File upload */}
@@ -942,64 +643,68 @@ export default function BookingPanel({
               /* Single parcel */
               <>
                 <div className="ad-copy-fields">
-                  <div className="ad-copy-field">
-                    <label>
-                      Headline <span className="required-star">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Main headline for your ad"
-                      className={showErrors && !formData.headline.trim() ? "field-error" : undefined}
-                      value={formData.headline}
-                      onChange={(e) =>
-                        setFormData({ ...formData, headline: e.target.value })
-                      }
-                    />
-                    {showErrors && !formData.headline.trim() && (
-                      <span className="ad-copy-field-error-msg">Required</span>
-                    )}
-                  </div>
-                  <div className="ad-copy-field">
-                    <label>Subheadline</label>
-                    <input
-                      type="text"
-                      placeholder="Secondary line (optional)"
-                      value={formData.subheadline}
-                      onChange={(e) =>
-                        setFormData({ ...formData, subheadline: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="ad-copy-field">
-                    <label>
-                      Call to Action <span className="required-star">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="URL, phone number, or address"
-                      className={showErrors && !formData.callToAction.trim() ? "field-error" : undefined}
-                      value={formData.callToAction}
-                      onChange={(e) =>
-                        setFormData({ ...formData, callToAction: e.target.value })
-                      }
-                    />
-                    {showErrors && !formData.callToAction.trim() && (
-                      <span className="ad-copy-field-error-msg">Required</span>
-                    )}
-                  </div>
                   {designOption === "need_design" && (
-                    <div className="ad-copy-field">
-                      <label>Notes for design team</label>
-                      <textarea
-                        placeholder="Colors, style preferences, any extra details..."
-                        rows={2}
-                        value={formData.adMessage}
-                        onChange={(e) =>
-                          setFormData({ ...formData, adMessage: e.target.value })
-                        }
-                      />
-                    </div>
+                    <>
+                      <div className="ad-copy-field">
+                        <label>
+                          Headline <span className="required-star">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Main headline for your ad"
+                          className={showErrors && !formData.headline.trim() ? "field-error" : undefined}
+                          value={formData.headline}
+                          onChange={(e) =>
+                            setFormData({ ...formData, headline: e.target.value })
+                          }
+                        />
+                        {showErrors && !formData.headline.trim() && (
+                          <span className="ad-copy-field-error-msg">Required</span>
+                        )}
+                      </div>
+                      <div className="ad-copy-field">
+                        <label>Subheadline</label>
+                        <input
+                          type="text"
+                          placeholder="Secondary line (optional)"
+                          value={formData.subheadline}
+                          onChange={(e) =>
+                            setFormData({ ...formData, subheadline: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="ad-copy-field">
+                        <label>
+                          Call to Action <span className="required-star">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="URL, phone number, or address"
+                          className={showErrors && !formData.callToAction.trim() ? "field-error" : undefined}
+                          value={formData.callToAction}
+                          onChange={(e) =>
+                            setFormData({ ...formData, callToAction: e.target.value })
+                          }
+                        />
+                        {showErrors && !formData.callToAction.trim() && (
+                          <span className="ad-copy-field-error-msg">Required</span>
+                        )}
+                      </div>
+                    </>
                   )}
+                  <div className="ad-copy-field">
+                    <label>{designOption === "own" ? "Message" : "Notes for design team"}</label>
+                    <textarea
+                      placeholder={designOption === "own"
+                        ? "Any notes for your template (optional)..."
+                        : "Colors, style preferences, any extra details..."}
+                      rows={2}
+                      value={formData.adMessage}
+                      onChange={(e) =>
+                        setFormData({ ...formData, adMessage: e.target.value })
+                      }
+                    />
+                  </div>
                 </div>
 
                 <div className="booking-upload-row">
@@ -1123,7 +828,7 @@ export default function BookingPanel({
                 }
               }}
             >
-              Save &amp; Review
+              Save to Checkout
               <span className="deedz-arrow">
                 <svg viewBox="0 0 205.82 196.86" width="9" height="9" fill="currentColor" style={{ transform: "rotate(-90deg)" }}>
                   <path d="M123,179.88l78.22-75.9c6-5.82,6.15-15.41.32-21.41h0c-5.82-6-15.41-6.15-21.41-.32l-62.86,60.99,1.93-127.87C119.32,7.01,112.65.13,104.28,0h0c-8.36-.13-15.24,6.55-15.37,14.91l-1.93,127.85-60.98-62.84c-5.82-6-15.41-6.15-21.41-.32h0c-6,5.82-6.15,15.41-.32,21.41l75.9,78.22,14.18,14.62c3.82,3.93,10.1,4.03,14.03.21l14.62-14.18Z" />
