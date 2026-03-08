@@ -9,7 +9,8 @@ import MapSidebar, {
 } from "../../components/map/MapSidebar";
 import MobileFilters from "../../components/map/MobileFilters";
 import BookingPanel from "../../components/map/BookingPanel";
-import SavedTray, { SavedDeedz } from "../../components/map/SavedTray";
+import CheckoutDrawer from "../../components/map/CheckoutDrawer";
+import { type SavedDeedz } from "../../components/map/SavedTray";
 import { MAP_PINS, MapPin } from "../../data/map-pins";
 
 export default function MapPage() {
@@ -19,8 +20,7 @@ export default function MapPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [cardView, setCardView] = useState(false);
   const [savedDeedz, setSavedDeedz] = useState<SavedDeedz[]>([]);
-  const [trayOpen, setTrayOpen] = useState(false);
-  const [multiCheckout, setMultiCheckout] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const filteredPins = useMemo(() => {
     return MAP_PINS.filter((pin) => {
@@ -49,20 +49,20 @@ export default function MapPage() {
     setSelectedPin(pin);
   }, []);
 
+  // Opening a pin for booking closes the checkout drawer
   const handleBookPin = useCallback((pin: MapPin) => {
     setBookingPin(pin);
+    setCheckoutOpen(false);
   }, []);
 
   const handleSavePin = useCallback((pin: MapPin, opts?: { termIndex: number; parcels: number; designOption: "own" | "need_design" }) => {
     setSavedDeedz((prev) => {
-      // Toggle: if any parcel from this pin exists, remove ALL parcels for that pin
       if (prev.some((s) => s.pin.id === pin.id)) {
         return prev.filter((s) => s.pin.id !== pin.id);
       }
       const count = opts?.parcels ?? 1;
       const termIndex = opts?.termIndex ?? 0;
       const designOption = opts?.designOption ?? "own";
-      // Create N separate items, one per parcel
       const newItems: SavedDeedz[] = [];
       for (let i = 1; i <= count; i++) {
         newItems.push({
@@ -79,9 +79,11 @@ export default function MapPage() {
   }, []);
 
   const handleRemoveSaved = useCallback((itemKey: string) => {
-    setSavedDeedz((prev) =>
-      prev.filter((s) => `${s.pin.id}-${s.parcelIndex}` !== itemKey)
-    );
+    setSavedDeedz((prev) => {
+      const next = prev.filter((s) => `${s.pin.id}-${s.parcelIndex}` !== itemKey);
+      if (next.length === 0) setCheckoutOpen(false);
+      return next;
+    });
   }, []);
 
   const handleUpdateTerm = useCallback((itemKey: string, termIndex: number) => {
@@ -92,14 +94,7 @@ export default function MapPage() {
     );
   }, []);
 
-  const handleUpdateAdMessage = useCallback((itemKey: string, adMessage: string) => {
-    setSavedDeedz((prev) =>
-      prev.map((s) =>
-        `${s.pin.id}-${s.parcelIndex}` === itemKey ? { ...s, adMessage } : s
-      )
-    );
-  }, []);
-
+  // Called from BookingPanel "Save to Checkout" — opens checkout drawer
   const handleSaveDeedz = useCallback((items: SavedDeedz[]) => {
     if (items.length === 0) return;
     const pinId = items[0].pin.id;
@@ -107,25 +102,9 @@ export default function MapPage() {
       ...prev.filter((s) => s.pin.id !== pinId),
       ...items,
     ]);
-    setTrayOpen(true);
+    setBookingPin(null);   // close booking panel
+    setCheckoutOpen(true); // open checkout drawer
   }, []);
-
-  const handleTrayCheckout = useCallback(() => {
-    if (savedDeedz.length > 0) {
-      setMultiCheckout(true);
-      setBookingPin(savedDeedz[0].pin); // opens panel; multi flag tells it to show all items
-    }
-  }, [savedDeedz]);
-
-  const handleEditFromCheckout = useCallback((pin: MapPin) => {
-    setMultiCheckout(false);
-    setBookingPin(pin);
-  }, []);
-
-  const prefillDeedz = useMemo(
-    () => savedDeedz.filter((s) => s.pin.id === bookingPin?.id),
-    [savedDeedz, bookingPin?.id]
-  );
 
   return (
     <div className="map-page">
@@ -149,17 +128,6 @@ export default function MapPage() {
           cardView={cardView}
           onToggleCardView={() => setCardView(v => !v)}
         />
-        <SavedTray
-          items={savedDeedz}
-          open={trayOpen}
-          onToggle={() => setTrayOpen((p) => !p)}
-          onRemove={handleRemoveSaved}
-          onUpdateTerm={handleUpdateTerm}
-          onUpdateAdMessage={handleUpdateAdMessage}
-          onCheckout={handleTrayCheckout}
-          cardView={cardView}
-          onToggleCardView={() => setCardView((v) => !v)}
-        />
       </div>
       <MobileFilters
         pins={MAP_PINS}
@@ -171,12 +139,16 @@ export default function MapPage() {
       />
       <BookingPanel
         pin={bookingPin}
-        onClose={() => { setBookingPin(null); setMultiCheckout(false); }}
-        savedDeedz={savedDeedz}
+        onClose={() => setBookingPin(null)}
         onSaveDeedz={handleSaveDeedz}
-        multiCheckout={multiCheckout}
-        onEditPin={handleEditFromCheckout}
-        prefillDeedz={prefillDeedz}
+      />
+      <CheckoutDrawer
+        savedDeedz={savedDeedz}
+        open={checkoutOpen}
+        onToggle={() => setCheckoutOpen(v => !v)}
+        onAddMore={() => setCheckoutOpen(false)}
+        onRemoveSaved={handleRemoveSaved}
+        onUpdateTerm={handleUpdateTerm}
       />
     </div>
   );
