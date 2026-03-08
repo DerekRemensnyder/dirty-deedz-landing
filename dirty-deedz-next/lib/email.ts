@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy-init: instantiate at call time so a missing env var doesn't crash the build
+const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
 const reviewers = (process.env.REVIEWER_EMAILS ?? "").split(",").map((e) => e.trim()).filter(Boolean);
 
@@ -74,7 +75,7 @@ export async function sendReviewEmail(contractor: ContractorInfo) {
     </div>
   `;
 
-  const result = await resend.emails.send({
+  const result = await getResend().emails.send({
     from: "Dirty Deedz <onboarding@resend.dev>",
     to: reviewers,
     subject: `New Contractor Application — ${contractor.name} (${contractor.companyName})`,
@@ -161,7 +162,7 @@ export async function sendListingReviewEmail(listing: ListingInfo) {
     </div>
   `;
 
-  const result = await resend.emails.send({
+  const result = await getResend().emails.send({
     from: "Dirty Deedz <onboarding@resend.dev>",
     to: reviewers,
     subject: `New Property Listing — ${listing.name} (${listing.address})`,
