@@ -1250,6 +1250,11 @@ h2, h3 { text-transform:capitalize; }
   backdrop-filter: blur(8px);
 }
 
+.map-legend--hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* ── View toggle button ── */
 .map-view-toggle-btn {
   display: flex;
@@ -1307,12 +1312,16 @@ h2, h3 { text-transform:capitalize; }
   flex-direction: column;
   background: #1a1a1a;
   border: 1px solid rgba(255,255,255,0.07);
+  border-top: 3px solid rgba(255,255,255,0.07);
   border-radius: 14px;
   overflow: hidden;
   cursor: pointer;
   text-align: left;
   transition: border-color 0.2s, transform 0.18s, box-shadow 0.2s;
 }
+.map-pin-card--available { border-top-color: #d5ff45; }
+.map-pin-card--multi     { border-top-color: #00d29a; }
+.map-pin-card--coming_soon { border-top-color: #df3257; }
 .map-pin-card:hover {
   border-color: rgba(255,255,255,0.18);
   transform: translateY(-3px);
@@ -2845,7 +2854,7 @@ h2, h3 { text-transform:capitalize; }
   background: #111; color: #d5ff45;
 }
 .booking-panel--multi .booking-submit:hover {
-  background: #222;
+  background: #df3257; color: #fff;
 }
 
 /* ── Ad Copy Fields (booking panel) ── */
@@ -2993,9 +3002,9 @@ h2, h3 { text-transform:capitalize; }
   border: 1px solid rgba(255,255,255,.08);
 }
 .saved-card-badge--design {
-  background: rgba(223,50,87,.12);
-  color: #df3257;
-  border: 1px solid rgba(223,50,87,.22);
+  background: rgba(0,210,154,.1);
+  color: #00d29a;
+  border: 1px solid rgba(0,210,154,.25);
 }
 
 /* ── Saved card subtotal with design note ── */
@@ -3017,6 +3026,10 @@ h2, h3 { text-transform:capitalize; }
   border-radius: 10px;
   padding: 14px 16px;
   margin-bottom: 10px;
+  position: relative;
+}
+.checkout-punchlist-card-header {
+  padding-right: 28px; /* room for absolute X */
 }
 .checkout-punchlist-card-header {
   display: flex;
@@ -3094,6 +3107,48 @@ h2, h3 { text-transform:capitalize; }
   color: #df3257;
   border-color: rgba(223,50,87,.5);
   background: rgba(223,50,87,.08);
+}
+.checkout-punchlist-remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.55);
+  border: 1.5px solid rgba(255,255,255,.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  color: rgba(255,255,255,.9);
+  z-index: 2;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.checkout-punchlist-remove-btn:hover {
+  background: #df3257;
+  color: #fff;
+  border-color: #df3257;
+}
+.checkout-add-more-btn {
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #df3257;
+  background: none;
+  border: 2px solid #df3257;
+  border-radius: 999px;
+  padding: 9px 26px;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.checkout-add-more-btn:hover {
+  background: #df3257;
+  color: #fff;
 }
 
 /* ── Multi-Design Section (checkout design details) ── */
@@ -4988,6 +5043,221 @@ h2, h3 { text-transform:capitalize; }
   font-size: .85rem;
   color: var(--text-muted);
   line-height: 1.5;
+}
+
+/* ── Checkout Drawer (right-side cart panel) ── */
+.checkout-drawer {
+  position: fixed;
+  top: 72px;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 100vw;
+  background: #d5ff45;
+  z-index: 99;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .35s cubic-bezier(.16,1,.3,1);
+  box-shadow: -6px 0 40px rgba(0,0,0,.35);
+}
+.checkout-drawer.open { transform: translateX(0); }
+
+/* Side pull-out tab — attached to panel, slides with it */
+.checkout-drawer-tab {
+  position: absolute;
+  left: -48px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 60px;
+  background: #d5ff45;
+  border: none;
+  border-radius: 12px 0 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: -4px 0 18px rgba(0,0,0,.3);
+  padding: 0;
+  transition: background .15s;
+}
+.checkout-drawer-tab:hover { background: #c8f230; }
+/* Icon wrapper with count badge centered in tab */
+.checkout-drawer-fab-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #111;
+}
+.checkout-drawer-fab-count {
+  position: absolute;
+  top: -7px;
+  right: -10px;
+  background: #111;
+  color: #d5ff45;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: .58rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.checkout-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 14px 40px;
+  scroll-behavior: smooth;
+}
+.checkout-drawer-form-section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1.5px solid rgba(0,0,0,.12);
+}
+.checkout-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.checkout-drawer-title {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #111;
+  letter-spacing: -.01em;
+  margin: 2px 0 0;
+}
+.checkout-drawer-close {
+  width: 28px;
+  height: 28px;
+  background: rgba(0,0,0,.1);
+  border: none;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background .15s;
+}
+.checkout-drawer-close:hover { background: rgba(0,0,0,.18); }
+.checkout-drawer-footer {
+  padding: 10px 14px 20px;
+  border-top: 1.5px solid rgba(0,0,0,.12);
+}
+.checkout-drawer-form-label {
+  display: block;
+  font-size: .65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: rgba(0,0,0,.5);
+  margin-bottom: 6px;
+  margin-top: 10px;
+}
+.checkout-drawer-input {
+  display: block;
+  width: 100%;
+  background: rgba(0,0,0,.08);
+  border: 1.5px solid rgba(0,0,0,.12);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: .875rem;
+  font-family: 'Roboto', sans-serif;
+  color: #111;
+  margin-bottom: 7px;
+  outline: none;
+  transition: border-color .15s;
+  box-sizing: border-box;
+}
+.checkout-drawer-input::placeholder { color: rgba(0,0,0,.35); }
+.checkout-drawer-input:focus { border-color: #111; }
+.checkout-drawer-submit {
+  background: #111 !important;
+  color: #d5ff45 !important;
+}
+.checkout-drawer-submit:hover {
+  background: #df3257 !important;
+  color: #fff !important;
+}
+
+/* Per-card location carousel */
+.checkout-card-carousel {
+  height: 130px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 10px;
+}
+.checkout-card-carousel-track {
+  display: flex;
+  height: 100%;
+  transition: transform .3s ease;
+}
+.checkout-card-carousel-img {
+  flex: 0 0 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.checkout-card-carousel-dots {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+}
+.checkout-card-carousel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.4);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background .15s;
+}
+.checkout-card-carousel-dot.active { background: #fff; }
+
+/* Per-card design toggle */
+.checkout-card-design-toggle {
+  display: flex;
+  gap: 5px;
+  margin: 8px 0;
+}
+.checkout-card-design-btn {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: rgba(255,255,255,.07);
+  color: rgba(255,255,255,.45);
+  border: 1px solid rgba(255,255,255,.1);
+  transition: background .15s, color .15s, border-color .15s;
+  line-height: 1.35;
+  text-align: center;
+  font-family: 'Roboto', sans-serif;
+}
+.checkout-card-design-btn.active {
+  background: #d5ff45;
+  color: #111;
+  border-color: #d5ff45;
+}
+.checkout-card-design-btn:not(.active):hover {
+  border-color: rgba(255,255,255,.25);
+  color: rgba(255,255,255,.7);
 }
 
 /* ── Join page responsive ── */

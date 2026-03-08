@@ -87,10 +87,11 @@ export default function MapView({
                 ? `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/${pin.lng},${pin.lat},17,0/400x300@2x?access_token=${mapboxToken}`
                 : null;
               const cardImgSrc = cardSatelliteUrl ?? pin.images?.[0] ?? null;
+              const statusClass = pin.parcels > 1 ? "multi" : pin.status;
               return (
                 <div
                   key={pin.id}
-                  className={`map-pin-card${selectedPin?.id === pin.id ? " active" : ""}`}
+                  className={`map-pin-card map-pin-card--${statusClass}${selectedPin?.id === pin.id ? " active" : ""}`}
                   onClick={() => onSelectPin(pin)}
                   role="button"
                   tabIndex={0}
@@ -299,18 +300,16 @@ export default function MapView({
         </Map>
       )}
 
-      {/* Controls bar: legend (map only) + view toggle */}
+      {/* Controls bar: legend + view toggle — legend hidden (not removed) in card view so toggle stays put */}
       <div className="map-controls-bar">
-        {!cardView && (
-          <div className="map-legend">
-            {LEGEND_ITEMS.map(({ label, color }) => (
-              <div key={label} className="legend-item">
-                <span className="legend-dot" style={{ background: color }} />
-                <span>{label}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className={`map-legend${cardView ? " map-legend--hidden" : ""}`}>
+          {LEGEND_ITEMS.map(({ label, color }) => (
+            <div key={label} className="legend-item">
+              <span className="legend-dot" style={{ background: color }} />
+              <span>{label}</span>
+            </div>
+          ))}
+        </div>
         <button
           className={`map-view-toggle-btn${cardView ? " active" : ""}`}
           onClick={onToggleCardView}
