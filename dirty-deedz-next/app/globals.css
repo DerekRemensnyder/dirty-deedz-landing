@@ -5048,7 +5048,7 @@ h2, h3 { text-transform:capitalize; }
 /* ── Checkout Drawer (right-side cart panel) ── */
 .checkout-drawer {
   position: fixed;
-  top: 72px;
+  top: 82px;
   right: 0;
   bottom: 0;
   width: 420px;
@@ -5159,27 +5159,27 @@ h2, h3 { text-transform:capitalize; }
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: .1em;
-  color: rgba(0,0,0,.5);
+  color: rgba(0,0,0,.7);
   margin-bottom: 6px;
   margin-top: 10px;
 }
 .checkout-drawer-input {
   display: block;
   width: 100%;
-  background: rgba(0,0,0,.08);
-  border: 1.5px solid rgba(0,0,0,.12);
+  background: rgba(0,0,0,.14);
+  border: 1.5px solid rgba(0,0,0,.3);
   border-radius: 8px;
   padding: 9px 12px;
   font-size: .875rem;
   font-family: 'Roboto', sans-serif;
-  color: #111;
+  color: #000;
   margin-bottom: 7px;
   outline: none;
   transition: border-color .15s;
   box-sizing: border-box;
 }
-.checkout-drawer-input::placeholder { color: rgba(0,0,0,.35); }
-.checkout-drawer-input:focus { border-color: #111; }
+.checkout-drawer-input::placeholder { color: rgba(0,0,0,.5); }
+.checkout-drawer-input:focus { border-color: #000; outline: 2px solid rgba(0,0,0,.2); }
 .checkout-drawer-submit {
   background: #111 !important;
   color: #d5ff45 !important;
