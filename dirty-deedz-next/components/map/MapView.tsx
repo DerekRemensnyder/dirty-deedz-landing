@@ -302,7 +302,7 @@ export default function MapView({
 
       {/* Controls bar: legend + view toggle — legend hidden (not removed) in card view so toggle stays put */}
       <div className="map-controls-bar">
-        <div className={`map-legend${cardView ? " map-legend--hidden" : ""}`}>
+        <div className="map-legend">
           {LEGEND_ITEMS.map(({ label, color }) => (
             <div key={label} className="legend-item">
               <span className="legend-dot" style={{ background: color }} />
