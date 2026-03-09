@@ -283,7 +283,6 @@ export default function BookingPanel({
             <div className="booking-meta">
               <span>{pin.neighborhood}</span>
               <span>{TRAFFIC_LABELS[pin.traffic]}</span>
-              <span>{pin.sqft} sq ft</span>
             </div>
           </div>
 

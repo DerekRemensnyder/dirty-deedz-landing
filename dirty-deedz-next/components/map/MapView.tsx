@@ -200,7 +200,6 @@ export default function MapView({
                     {/* Desktop-only meta row */}
                     <div className="map-pin-card-meta">
                       <span>{TRAFFIC_LABELS[pin.traffic]}</span>
-                      <span>{pin.sqft} sq ft</span>
                       {pin.parcels > 1 && <span>{pin.parcels} parcels</span>}
                     </div>
                   </div>
@@ -369,7 +368,6 @@ export default function MapView({
 
                   <div className="popup-meta">
                     <span>{TRAFFIC_LABELS[selectedPin.traffic]}</span>
-                    <span>{selectedPin.sqft} sq ft</span>
                     {selectedPin.parcels > 1 && (
                       <span>{selectedPin.parcels} parcels</span>
                     )}

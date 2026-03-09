@@ -2599,17 +2599,24 @@ h2, h3 { text-transform:capitalize; }
 .booking-close {
   position: absolute;
   top: 16px;
-  right: 20px;
-  background: none;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
   border: none;
-  color: rgba(255,255,255,0.5);
-  font-size: 1.6rem;
+  color: #111;
+  font-size: 1.2rem;
+  font-weight: 700;
   cursor: pointer;
   z-index: 3;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .booking-close:hover {
-  color: #fff;
+  background: rgba(255,255,255,0.85);
 }
 
 /* ── Booking Carousel ── */
@@ -3991,13 +3998,13 @@ h2, h3 { text-transform:capitalize; }
   }
   .booking-panel {
     position: fixed;
-    top: 0;
+    top: 56px;           /* below fixed nav so nav stays visible */
     left: 0;
     right: 0;
     bottom: 0;
     width: 100%;
     max-width: 100%;
-    height: 100%;
+    height: auto;        /* top+bottom determine height */
     transform: translateY(100%);
     border-left: none;
     border-top: 2px solid rgba(255,255,255,.08);
