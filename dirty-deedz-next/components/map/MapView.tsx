@@ -231,8 +231,9 @@ export default function MapView({
             )}
           </div>
 
-          {/* Scroll indicator dots — mobile carousel position indicator */}
+          {/* Position indicator — dots when few cards, counter when many */}
           {pagedPins.length > 1 && (
+            pagedPins.length <= 7 ? (
             <div className="card-scroll-dots">
               {pagedPins.map((_, i) => (
                 <button
@@ -249,6 +250,11 @@ export default function MapView({
                 />
               ))}
             </div>
+            ) : (
+            <div className="card-scroll-counter">
+              {scrollIndex + 1} / {pagedPins.length}
+            </div>
+            )
           )}
 
           {/* Pagination */}
