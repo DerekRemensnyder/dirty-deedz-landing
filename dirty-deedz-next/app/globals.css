@@ -3857,16 +3857,20 @@ h2, h3 { text-transform:capitalize; }
     display: none;
   }
 
-  /* ── Card grid: horizontal swipe carousel ── */
+  /* ── Card grid: fixed overlay — sidesteps height-chain and touch-capture issues ── */
   .card-grid-view {
-    position: relative;
-    height: 100%;
-    overflow: hidden;
+    position: fixed;
+    top: 56px;       /* below nav */
+    left: 0;
+    right: 0;
+    height: 75vh;    /* mirrors map-layout height */
+    z-index: 20;     /* above sticky map (z-index:5) */
+    background: #0e0e0e;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
   .card-grid-inner {
-    /* flex: 1 + min-height: 0 is the reliable pattern for overflow in flex children */
     flex: 1;
     min-height: 0;
     display: flex;
@@ -3874,7 +3878,6 @@ h2, h3 { text-transform:capitalize; }
     flex-wrap: nowrap;
     overflow-x: scroll;
     overflow-y: hidden;
-    /* snap handled by JS touchend for iOS; proximity for mouse/trackpad */
     scroll-snap-type: x proximity;
     touch-action: pan-x;
     gap: 12px;
