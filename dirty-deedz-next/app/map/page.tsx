@@ -136,6 +136,8 @@ export default function MapPage() {
         onFiltersChange={setFilters}
         cardView={cardView}
         onToggleCardView={() => setCardView(v => !v)}
+        savedCount={savedDeedz.length}
+        onOpenCheckout={() => setCheckoutOpen(true)}
       />
       <BookingPanel
         pin={bookingPin}

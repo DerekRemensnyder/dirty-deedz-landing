@@ -48,10 +48,12 @@ export default function MapView({
 }: MapViewProps) {
   const mapRef = useRef<MapRef>(null);
   const [page, setPage] = useState(0);
+  const [scrollIndex, setScrollIndex] = useState(0);
   const gridRef = useRef<HTMLDivElement>(null);
+  const innerGridRef = useRef<HTMLDivElement>(null);
 
   // Reset to first page whenever the visible pin set changes
-  useEffect(() => { setPage(0); }, [pins.length, cardView]);
+  useEffect(() => { setPage(0); setScrollIndex(0); }, [pins.length, cardView]);
 
   const totalPages = Math.ceil(pins.length / PAGE_SIZE);
   const pagedPins = pins.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -61,13 +63,26 @@ export default function MapView({
     gridRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleInnerScroll = useCallback(() => {
+    const el = innerGridRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const maxScroll = scrollWidth - clientWidth;
+    if (maxScroll <= 0) { setScrollIndex(0); return; }
+    const count = Math.ceil(pins.length / PAGE_SIZE) <= 1 ? pagedPins.length : pagedPins.length;
+    const idx = Math.round((scrollLeft / maxScroll) * (pagedPins.length - 1));
+    setScrollIndex(Math.max(0, Math.min(idx, pagedPins.length - 1)));
+  }, [pagedPins.length]);
+
   const handleMarkerClick = useCallback(
     (pin: MapPin) => {
       onSelectPin(pin);
+      const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
       mapRef.current?.flyTo({
         center: [pin.lng, pin.lat],
         zoom: 15,
         duration: 1200,
+        ...(isMobile && { padding: { top: 320, bottom: 20, left: 20, right: 20 } }),
       });
     },
     [onSelectPin]
@@ -78,7 +93,7 @@ export default function MapView({
       {cardView ? (
         /* ── Card grid view ── */
         <div className="card-grid-view" ref={gridRef}>
-          <div className="card-grid-inner">
+          <div className="card-grid-inner" ref={innerGridRef} onScroll={handleInnerScroll}>
             {pagedPins.map((pin) => {
               const tag = getPinTag(pin);
               const isSaved = savedIds.has(pin.id);
@@ -114,40 +129,49 @@ export default function MapView({
 
                   {/* Content */}
                   <div className="map-pin-card-body">
-                    {isSaved ? (
-                      <span className="map-pin-card-tag map-pin-card-tag--saved">
-                        <BrandArrow size={7} fill="#DF3257" style={{ marginRight: 4 }} />
-                        SAVED
+                    {/* Tag row: status tag left, traffic+parcels right */}
+                    <div className="map-pin-card-tag-row">
+                      {isSaved ? (
+                        <span className="map-pin-card-tag map-pin-card-tag--saved">
+                          <BrandArrow size={7} fill="#DF3257" style={{ marginRight: 4 }} />
+                          SAVED
+                        </span>
+                      ) : (
+                        <span className="map-pin-card-tag" style={{ color: tag.color }}>
+                          {tag.label.toUpperCase()}
+                        </span>
+                      )}
+                      <span className="map-pin-card-meta-inline">
+                        {TRAFFIC_LABELS[pin.traffic]}{pin.parcels > 1 ? ` · ${pin.parcels} parcels` : ""}
                       </span>
-                    ) : (
-                      <span className="map-pin-card-tag" style={{ color: tag.color }}>
-                        {tag.label.toUpperCase()}
-                      </span>
-                    )}
+                    </div>
                     <p className="map-pin-card-name">{pin.name}</p>
                     <p className="map-pin-card-address">{pin.address}</p>
                     <p className="map-pin-card-desc">{pin.description}</p>
+                    {/* Desktop-only meta row */}
                     <div className="map-pin-card-meta">
                       <span>{TRAFFIC_LABELS[pin.traffic]}</span>
                       <span>{pin.sqft} sq ft</span>
                       {pin.parcels > 1 && <span>{pin.parcels} parcels</span>}
                     </div>
-                    <div className="map-pin-card-footer">
-                      <div className="map-pin-card-price">
-                        <span className="map-pin-card-price-label">AS LOW AS</span>
-                        <span className="map-pin-card-price-amount">$333</span>
-                        <span className="map-pin-card-price-unit">/mo</span>
-                      </div>
-                      <button
-                        className="btn btn-primary map-pin-card-cta"
-                        onClick={(e) => { e.stopPropagation(); onBookPin(pin); }}
-                      >
-                        {pin.status === "available" ? (
-                          <>Lease a Deedz <span className="arrow"><BrandArrow /></span></>
-                        ) : (
-                          <>Secure Your Deedz <span className="arrow"><BrandArrow /></span></>
-                        )}
-                      </button>
+                  </div>
+
+                  {/* Footer — direct card child so it's never clipped by body overflow */}
+                  <div className="map-pin-card-footer">
+                    <button
+                      className="btn btn-primary map-pin-card-cta"
+                      onClick={(e) => { e.stopPropagation(); onBookPin(pin); }}
+                    >
+                      {pin.status === "available" ? (
+                        <>Lease a Deedz <span className="arrow"><BrandArrow /></span></>
+                      ) : (
+                        <>Secure Your Deedz <span className="arrow"><BrandArrow /></span></>
+                      )}
+                    </button>
+                    <div className="map-pin-card-price">
+                      <span className="map-pin-card-price-label">AS LOW AS</span>
+                      <span className="map-pin-card-price-amount">$333</span>
+                      <span className="map-pin-card-price-unit">/mo</span>
                     </div>
                   </div>
                 </div>
@@ -157,6 +181,26 @@ export default function MapView({
               <p className="card-grid-empty">No locations match your filters.</p>
             )}
           </div>
+
+          {/* Scroll indicator dots — mobile carousel position indicator */}
+          {pagedPins.length > 1 && (
+            <div className="card-scroll-dots">
+              {pagedPins.map((_, i) => (
+                <button
+                  key={i}
+                  className={`card-scroll-dot${i === scrollIndex ? " active" : ""}`}
+                  aria-label={`Go to card ${i + 1}`}
+                  onClick={() => {
+                    const el = innerGridRef.current;
+                    if (!el) return;
+                    const cardWidth = el.scrollWidth / pagedPins.length;
+                    el.scrollTo({ left: cardWidth * i, behavior: "smooth" });
+                    setScrollIndex(i);
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Pagination */}
           {totalPages > 1 && (

@@ -24,6 +24,8 @@ interface MobileFiltersProps {
   onFiltersChange: (f: MapFilters) => void;
   cardView: boolean;
   onToggleCardView: () => void;
+  savedCount: number;
+  onOpenCheckout: () => void;
 }
 
 export default function MobileFilters({
@@ -32,9 +34,13 @@ export default function MobileFilters({
   onFiltersChange,
   cardView,
   onToggleCardView,
+  savedCount,
+  onOpenCheckout,
 }: MobileFiltersProps) {
-  const [neighborhoodOpen, setNeighborhoodOpen] = useState(true);
-  const [trafficOpen, setTrafficOpen] = useState(true);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [neighborhoodOpen, setNeighborhoodOpen] = useState(false);
+  const [trafficOpen, setTrafficOpen] = useState(false);
 
   const counts = useMemo(() => {
     const s: Record<string, number> = {};
@@ -87,100 +93,133 @@ export default function MobileFilters({
 
   return (
     <div className="mobile-filters">
-      {/* Header: Browse Deedz + view toggle */}
+      {/* Header: Browse Deedz + view toggle + cart */}
       <div className="mf-header">
         <h2 className="mf-title">Browse Deedz</h2>
-        <button className="mf-view-toggle" onClick={onToggleCardView} aria-label={cardView ? "Switch to map" : "Switch to cards"}>
-          {cardView ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
-              <line x1="8" y1="2" x2="8" y2="18"/>
-              <line x1="16" y1="6" x2="16" y2="22"/>
-            </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7" rx="1"/>
-              <rect x="14" y="3" width="7" height="7" rx="1"/>
-              <rect x="3" y="14" width="7" height="7" rx="1"/>
-              <rect x="14" y="14" width="7" height="7" rx="1"/>
-            </svg>
+        <div className="mf-header-actions">
+          <button className="mf-view-toggle" onClick={onToggleCardView} aria-label={cardView ? "Switch to map" : "Switch to cards"}>
+            {cardView ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                <line x1="8" y1="2" x2="8" y2="18"/>
+                <line x1="16" y1="6" x2="16" y2="22"/>
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+              </svg>
+            )}
+            {cardView ? "Map" : "Cards"}
+          </button>
+          {savedCount > 0 && (
+            <button className="mf-cart-btn" onClick={onOpenCheckout} aria-label="Open checkout">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+              Cart
+              <span className="mf-cart-count">{savedCount}</span>
+            </button>
           )}
-          {cardView ? "Map" : "Cards"}
+        </div>
+      </div>
+
+      {/* Status accordion */}
+      <div className="mf-accordion">
+        <button className="mf-accordion-hd" onClick={() => setStatusOpen((v) => !v)}>
+          Status
+          {(filters.status.length > 0 || filters.multiDeedz) && (
+            <span className="mf-accordion-badge">{filters.status.length + (filters.multiDeedz ? 1 : 0)}</span>
+          )}
+          <span className={`mf-accordion-icon${statusOpen ? " open" : ""}`}>+</span>
         </button>
+        {statusOpen && (
+          <div className="mf-chips mf-chips--pad">
+            <button
+              className={`mf-chip${filters.status.length === 0 && !filters.multiDeedz ? " active" : ""}`}
+              onClick={() => onFiltersChange({ ...filters, status: [], multiDeedz: false })}
+            >
+              View All ({pins.length})
+            </button>
+            <button
+              className={`mf-chip${filters.status.includes("available") ? " active" : ""}`}
+              style={filters.status.includes("available") ? { borderColor: STATUS_COLORS.available, color: STATUS_COLORS.available } : undefined}
+              onClick={() => onFiltersChange({ ...filters, status: toggleChip(filters.status, "available" as PinStatus) })}
+            >
+              <span className="mf-chip-dot" style={{ background: STATUS_COLORS.available }} />
+              Available ({counts.available || 0})
+            </button>
+            <button
+              className={`mf-chip${filters.multiDeedz ? " active" : ""}`}
+              style={filters.multiDeedz ? { borderColor: MULTI_DEEDZ_COLOR, color: MULTI_DEEDZ_COLOR } : undefined}
+              onClick={() => onFiltersChange({ ...filters, multiDeedz: !filters.multiDeedz })}
+            >
+              <span className="mf-chip-dot" style={{ background: MULTI_DEEDZ_COLOR }} />
+              Multiple Deedz ({counts._multi || 0})
+            </button>
+            <button
+              className={`mf-chip${filters.status.includes("coming_soon") ? " active" : ""}`}
+              style={filters.status.includes("coming_soon") ? { borderColor: STATUS_COLORS.coming_soon, color: STATUS_COLORS.coming_soon } : undefined}
+              onClick={() => onFiltersChange({ ...filters, status: toggleChip(filters.status, "coming_soon" as PinStatus) })}
+            >
+              <span className="mf-chip-dot" style={{ background: STATUS_COLORS.coming_soon }} />
+              Coming Soon ({counts.coming_soon || 0})
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Location */}
-      <div className="mf-section">
-        <label className="mf-label">Location</label>
-        <div className="mf-select-row">
-          <select
-            className="mf-select"
-            value={filters.state}
-            onChange={(e) =>
-              onFiltersChange({ ...filters, state: e.target.value as USState | "", city: "", neighborhood: [] })
-            }
-          >
-            <option value="">All States</option>
-            {ALL_STATES.map((s) => (
-              <option key={s} value={s}>{s} ({stateCounts[s] || 0})</option>
-            ))}
-          </select>
-          <select
-            className="mf-select"
-            value={filters.city}
-            onChange={(e) =>
-              onFiltersChange({ ...filters, city: e.target.value as City | "", neighborhood: [] })
-            }
-          >
-            <option value="">All Cities</option>
-            {citiesForState.map((c) => (
-              <option key={c} value={c}>{c} ({cityCounts[c] || 0})</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Status chips */}
-      <div className="mf-section">
-        <label className="mf-label">Status</label>
-        <div className="mf-chips">
-          <button
-            className={`mf-chip${filters.status.length === 0 && !filters.multiDeedz ? " active" : ""}`}
-            onClick={() => onFiltersChange({ ...filters, status: [], multiDeedz: false })}
-          >
-            View All ({pins.length})
-          </button>
-          <button
-            className={`mf-chip${filters.status.includes("available") ? " active" : ""}`}
-            style={filters.status.includes("available") ? { borderColor: STATUS_COLORS.available, color: STATUS_COLORS.available } : undefined}
-            onClick={() => onFiltersChange({ ...filters, status: toggleChip(filters.status, "available" as PinStatus) })}
-          >
-            <span className="mf-chip-dot" style={{ background: STATUS_COLORS.available }} />
-            Available ({counts.available || 0})
-          </button>
-          <button
-            className={`mf-chip${filters.multiDeedz ? " active" : ""}`}
-            style={filters.multiDeedz ? { borderColor: MULTI_DEEDZ_COLOR, color: MULTI_DEEDZ_COLOR } : undefined}
-            onClick={() => onFiltersChange({ ...filters, multiDeedz: !filters.multiDeedz })}
-          >
-            <span className="mf-chip-dot" style={{ background: MULTI_DEEDZ_COLOR }} />
-            Multiple Deedz ({counts._multi || 0})
-          </button>
-          <button
-            className={`mf-chip${filters.status.includes("coming_soon") ? " active" : ""}`}
-            style={filters.status.includes("coming_soon") ? { borderColor: STATUS_COLORS.coming_soon, color: STATUS_COLORS.coming_soon } : undefined}
-            onClick={() => onFiltersChange({ ...filters, status: toggleChip(filters.status, "coming_soon" as PinStatus) })}
-          >
-            <span className="mf-chip-dot" style={{ background: STATUS_COLORS.coming_soon }} />
-            Coming Soon ({counts.coming_soon || 0})
-          </button>
-        </div>
+      {/* Location accordion */}
+      <div className="mf-accordion">
+        <button className="mf-accordion-hd" onClick={() => setLocationOpen((v) => !v)}>
+          Location
+          {(filters.state || filters.city) && (
+            <span className="mf-accordion-badge">{[filters.state, filters.city].filter(Boolean).length}</span>
+          )}
+          <span className={`mf-accordion-icon${locationOpen ? " open" : ""}`}>+</span>
+        </button>
+        {locationOpen && (
+          <div className="mf-chips--pad" style={{ paddingTop: 4 }}>
+            <div className="mf-select-row">
+              <select
+                className="mf-select"
+                value={filters.state}
+                onChange={(e) =>
+                  onFiltersChange({ ...filters, state: e.target.value as USState | "", city: "", neighborhood: [] })
+                }
+              >
+                <option value="">All States</option>
+                {ALL_STATES.map((s) => (
+                  <option key={s} value={s}>{s} ({stateCounts[s] || 0})</option>
+                ))}
+              </select>
+              <select
+                className="mf-select"
+                value={filters.city}
+                onChange={(e) =>
+                  onFiltersChange({ ...filters, city: e.target.value as City | "", neighborhood: [] })
+                }
+              >
+                <option value="">All Cities</option>
+                {citiesForState.map((c) => (
+                  <option key={c} value={c}>{c} ({cityCounts[c] || 0})</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Neighborhood accordion */}
       <div className="mf-accordion">
         <button className="mf-accordion-hd" onClick={() => setNeighborhoodOpen((v) => !v)}>
           Neighborhood
+          {filters.neighborhood.length > 0 && (
+            <span className="mf-accordion-badge">{filters.neighborhood.length}</span>
+          )}
           <span className={`mf-accordion-icon${neighborhoodOpen ? " open" : ""}`}>+</span>
         </button>
         {neighborhoodOpen && (
@@ -204,6 +243,9 @@ export default function MobileFilters({
       <div className="mf-accordion">
         <button className="mf-accordion-hd" onClick={() => setTrafficOpen((v) => !v)}>
           Foot Traffic
+          {filters.traffic.length > 0 && (
+            <span className="mf-accordion-badge">{filters.traffic.length}</span>
+          )}
           <span className={`mf-accordion-icon${trafficOpen ? " open" : ""}`}>+</span>
         </button>
         {trafficOpen && (

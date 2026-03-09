@@ -1377,9 +1377,22 @@ h2, h3 { text-transform:capitalize; }
   font-weight: 700;
   letter-spacing: .1em;
   text-transform: uppercase;
-  margin-bottom: 8px;
   display: block;
 }
+.map-pin-card-tag-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.map-pin-card-meta-inline {
+  font-size: .68rem;
+  color: rgba(255,255,255,.4);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.card-scroll-dots { display: none; }
 
 /* Name */
 .map-pin-card-name {
@@ -3808,15 +3821,16 @@ h2, h3 { text-transform:capitalize; }
     overflow-x: hidden;
   }
 
-  /* ── Map area: sticky at top, 55vh, never scrolls away ── */
+  /* ── Map area: sticky at top, 75vh, never scrolls away ── */
   .map-layout {
     position: sticky;
     top: 56px;
-    height: 55vh;
-    min-height: 260px;
+    height: 75vh;
+    min-height: 340px;
     margin-top: 56px;
     flex-direction: row;
-    overflow: hidden;
+    /* visible so Mapbox popup HTML overlay isn't clipped */
+    overflow: visible;
     z-index: 5;
   }
 
@@ -3826,6 +3840,8 @@ h2, h3 { text-transform:capitalize; }
     height: 100%;
     min-height: unset;
     position: relative;
+    /* visible so Mapbox popup HTML overlay can render above the map bounds */
+    overflow: visible;
   }
 
   /* Hide desktop sidebar + toggle */
@@ -3834,18 +3850,11 @@ h2, h3 { text-transform:capitalize; }
     display: none !important;
   }
 
-  /* Controls bar: bottom-left of map */
-  .map-controls-bar {
-    left: 12px;
-    right: auto;
-    bottom: 12px;
-    justify-content: flex-start;
-  }
+  /* Controls bar: hidden on mobile — MobileFilters header has the view toggle */
+  .map-controls-bar { display: none; }
   .map-view-toggle-btn { display: none; }
   .map-legend {
-    gap: 10px;
-    padding: 8px 12px;
-    font-size: 0.65rem;
+    display: none;
   }
 
   /* ── Card grid: horizontal swipe carousel ── */
@@ -3857,14 +3866,19 @@ h2, h3 { text-transform:capitalize; }
     flex-direction: column;
   }
   .card-grid-inner {
+    /* flex: 1 + min-height: 0 is the reliable pattern for overflow in flex children */
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: row;
-    overflow-x: scroll;
-    scroll-snap-type: x mandatory;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
     gap: 12px;
     padding: 12px 16px 16px;
-    height: 100%;
     align-items: stretch;
   }
   .card-grid-inner::-webkit-scrollbar { display: none; }
@@ -3872,47 +3886,91 @@ h2, h3 { text-transform:capitalize; }
     min-width: 82vw;
     max-width: 82vw;
     flex-shrink: 0;
-    scroll-snap-align: center;
-    height: 100%;
+    scroll-snap-align: start;
+    /* no height: 100% — flex align-items: stretch handles it */
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    touch-action: pan-x;
+    -webkit-user-select: none;
+    user-select: none;
   }
   .map-pin-card-img {
     aspect-ratio: unset;
-    height: 110px;
+    height: 140px;
     flex-shrink: 0;
   }
   .map-pin-card-body {
     flex: 1;
-    padding: 12px 14px;
+    padding: 10px 14px 6px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
     overflow: hidden;
+    min-height: 0;
   }
-  .map-pin-card-meta,
-  .map-pin-card-price { display: none; }
+  .map-pin-card-desc {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    margin-bottom: 0;
+  }
+  .map-pin-card-meta { display: none; }
   .map-pin-card-footer {
-    padding-top: 10px;
-    margin-top: auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px 12px;
+    margin-top: 0;
     flex-shrink: 0;
+    gap: 8px;
+  }
+  .map-pin-card-footer .map-pin-card-price {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+    gap: 0;
   }
   .map-pin-card-cta {
-    width: 100%;
+    flex: 1;
     justify-content: center;
+    font-size: .72rem;
+    padding: 8px 10px;
   }
   .card-grid-pagination { display: none; }
+  /* Scroll indicator dots */
+  .card-scroll-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 0 4px;
+    flex-shrink: 0;
+  }
+  .card-scroll-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.2);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: background .2s, transform .2s;
+  }
+  .card-scroll-dot.active {
+    background: #d5ff45;
+    transform: scale(1.3);
+  }
 
   /* ── Mobile filters: scrolls naturally below sticky map ── */
   .mobile-filters {
     display: block;
     background: #0a0a0a;
-    padding: 0 0 48px;
     position: relative;
     z-index: 4;
-    /* Extra bottom padding so last filter clears any floating UI */
-    padding-bottom: 80px;
+    padding-bottom: 40px;
   }
 
   /* ── Booking panel: full-screen slide-up from bottom ── */
@@ -3942,16 +4000,6 @@ h2, h3 { text-transform:capitalize; }
     transform: translateY(0);
   }
 
-  /* ── Checkout drawer: full-screen on mobile ── */
-  .checkout-drawer {
-    top: 0;
-    width: 100vw;
-    max-width: 100vw;
-  }
-  /* Tab peeking from right when closed is fine; hide it when open (close btn inside handles it) */
-  .checkout-drawer.open .checkout-drawer-tab {
-    display: none;
-  }
 }
 
 /* ── MobileFilters Component ── */
@@ -3959,17 +4007,21 @@ h2, h3 { text-transform:capitalize; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 16px 12px;
+  gap: 10px;
+  padding: 10px 16px 8px;
   border-bottom: 1px solid rgba(255,255,255,.08);
+  flex-wrap: nowrap;
 }
 
 .mf-title {
   font-family: 'Archivo', sans-serif;
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: 800;
   color: #fff;
   text-transform: none;
   letter-spacing: -.01em;
+  flex: 1;
+  min-width: 0;
 }
 
 .mf-view-toggle {
@@ -3977,13 +4029,44 @@ h2, h3 { text-transform:capitalize; }
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.12);
+  background: transparent;
+  border: 1.5px solid #d5ff45;
   border-radius: 20px;
-  color: rgba(255,255,255,.7);
+  color: #d5ff45;
   font-size: .8rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
+}
+.mf-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.mf-cart-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #d5ff45;
+  border: none;
+  border-radius: 20px;
+  color: #000;
+  font-size: .85rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.mf-cart-count {
+  background: #000;
+  color: #d5ff45;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: .7rem;
+  font-weight: 800;
+  min-width: 18px;
+  text-align: center;
 }
 
 .mf-actions {
@@ -4078,7 +4161,7 @@ h2, h3 { text-transform:capitalize; }
 }
 
 .mf-chips--pad {
-  padding: 0 16px 14px;
+  padding: 0 16px 6px;
 }
 
 .mf-chip {
@@ -4111,7 +4194,6 @@ h2, h3 { text-transform:capitalize; }
 
 .mf-accordion {
   border-top: 1px solid rgba(255,255,255,.07);
-  margin-top: 6px;
 }
 
 .mf-accordion-hd {
@@ -4119,12 +4201,28 @@ h2, h3 { text-transform:capitalize; }
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 14px 16px;
+  padding: 9px 16px;
   font-size: .85rem;
   font-weight: 600;
   color: rgba(255,255,255,.75);
   cursor: pointer;
   text-align: left;
+}
+
+.mf-accordion-badge {
+  margin-left: auto;
+  margin-right: 8px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #d5ff45;
+  color: #000;
+  font-size: .65rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
 }
 
 .mf-accordion-icon {
@@ -5305,4 +5403,31 @@ h2, h3 { text-transform:capitalize; }
 }
 @media (max-width: 480px) {
   .join-how-steps { grid-template-columns: 1fr; }
+}
+
+/* ── Mobile checkout drawer ─────────────────────────────────────────────────
+   These rules come AFTER the base .checkout-drawer block so they win on
+   source order (same specificity, later = wins).
+   We animate with `left` instead of `transform` so the pull-tab can use
+   position:fixed freely (transform creates a new stacking context that
+   traps fixed-positioned children).
+   ─────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .checkout-drawer {
+    top: 0;
+    left: 100%;        /* slide in from the right */
+    right: auto;
+    bottom: 0;
+    width: 100%;
+    max-width: 100%;
+    transform: none;   /* disable transform so tab can be position:fixed */
+    transition: left .35s cubic-bezier(.16,1,.3,1);
+  }
+  .checkout-drawer.open {
+    left: 0;
+    transform: none;
+  }
+
+  /* Cart is in the Browse Deedz header on mobile — hide the floating tab */
+  .checkout-drawer-tab { display: none; }
 }
